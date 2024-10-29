@@ -5,12 +5,6 @@ return {
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
       require("telescope").setup({
-        defaults = {
-          file_ignore_patterns = {
-            ".git",
-            "node_modules",
-          },
-        },
         pickers = {
           find_files = {
             hidden = true,
@@ -19,6 +13,13 @@ return {
       })
       local builtin = require("telescope.builtin")
       vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Telescope find files" })
+      vim.keymap.set(
+        "n",
+        "<leader>fi",
+        builtin.current_buffer_fuzzy_find,
+        { desc = "Telescope find inside file" }
+      )
+      vim.keymap.set("n", "<leader>fv", builtin.git_files, { desc = "Telescope git files" })
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Telescope live grep" })
       vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Telescope buffers" })
       vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Telescope help tags" })
@@ -35,6 +36,12 @@ return {
         },
       })
       require("telescope").load_extension("ui-select")
+    end,
+  },
+  {
+    "Slotos/telescope-lsp-handlers.nvim",
+    config = function()
+      require("telescope-lsp-handlers").setup()
     end,
   },
 }
