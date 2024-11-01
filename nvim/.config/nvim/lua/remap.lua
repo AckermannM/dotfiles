@@ -33,3 +33,34 @@ vim.keymap.set("n", "<leader>gf", vim.lsp.buf.format)
 
 -- search and replace
 vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+
+-- Borderless lazygit
+vim.keymap.set("n", "<leader>gg", function()
+  -- Find the project root, defaults to the current working directory
+  local root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+  if vim.v.shell_error ~= 0 then
+    root = vim.fn.getcwd()
+  end
+
+  -- Configure the floating window options
+  local buf = vim.api.nvim_create_buf(false, true)
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = math.floor(vim.o.columns * 0.9),
+    height = math.floor(vim.o.lines * 0.9),
+    row = math.floor(vim.o.lines * 0.05),
+    col = math.floor(vim.o.columns * 0.05),
+    style = "minimal",
+    border = "none",
+  })
+
+  -- Start LazyGit in the floating terminal
+  vim.fn.termopen("lazygit", { cwd = root })
+  vim.cmd("startinsert")
+  vim.api.nvim_create_autocmd("TermClose", {
+    buffer = buf,
+    callback = function()
+      vim.api.nvim_win_close(win, true)
+    end,
+  })
+end, { desc = "Lazygit (root dir)" })
