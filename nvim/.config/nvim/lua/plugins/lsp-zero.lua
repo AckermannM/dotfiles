@@ -31,7 +31,6 @@ return {
   branch = "v4.x",
   dependencies = {
     "neovim/nvim-lspconfig",
-    "neovim/nvim-lspconfig",
     "hrsh7th/cmp-nvim-lsp",
     "hrsh7th/nvim-cmp",
     "williamboman/mason.nvim",
@@ -148,11 +147,36 @@ return {
     })
 
     local cmp = require("cmp")
-    local copilot = require("copilot.suggestion")
     cmp.setup({
       window = {
-        completion = cmp.config.window.bordered(),
-        documentation = cmp.config.window.bordered(),
+        completion = {
+          border = {
+            { "󱐋", "WarningMsg" },
+            { "─", "Comment" },
+            { "╮", "Comment" },
+            { "│", "Comment" },
+            { "╯", "Comment" },
+            { "─", "Comment" },
+            { "╰", "Comment" },
+            { "│", "Comment" },
+          },
+          scrollbar = false,
+          winblend = 0,
+        },
+        documentation = {
+          border = {
+            { "󰙎", "DiagnosticHint" },
+            { "─", "Comment" },
+            { "╮", "Comment" },
+            { "│", "Comment" },
+            { "╯", "Comment" },
+            { "─", "Comment" },
+            { "╰", "Comment" },
+            { "│", "Comment" },
+          },
+          scrollbar = false,
+          winblend = 0,
+        },
       },
       formatting = {
         format = function(entry, vim_item)
@@ -173,9 +197,7 @@ return {
       },
       mapping = cmp.mapping.preset.insert({
         ["<Tab>"] = cmp.mapping(function(fallback)
-          if copilot.is_visible() then
-            copilot.accept()
-          elseif cmp.visible() then
+          if cmp.visible() then
             local entry = cmp.get_selected_entry()
             if not entry then
               cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
@@ -186,24 +208,53 @@ return {
             fallback()
           end
         end, { "i", "s" }),
-        ["<C-.>"] = cmp.mapping(function()
-          if copilot.is_visible() then
-            copilot.next()
+        ["j"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            local entry = cmp.get_selected_entry()
+            if not entry then
+              fallback()
+            else
+              cmp.select_next_item()
+            end
+          else
+            fallback()
           end
-        end),
-        ["<C-,>"] = cmp.mapping(function()
-          if copilot.is_visible() then
-            copilot.prev()
+        end, { "i", "s" }),
+        ["k"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            local entry = cmp.get_selected_entry()
+            if not entry then
+              fallback()
+            else
+              cmp.select_prev_item()
+            end
+          else
+            fallback()
           end
-        end),
+        end, { "i", "s" }),
+        ["q"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            local entry = cmp.get_selected_entry()
+            if not entry then
+              fallback()
+            else
+              cmp.abort()
+            end
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+
         ["<C-b>"] = cmp.mapping.scroll_docs(-4),
         ["<C-f>"] = cmp.mapping.scroll_docs(4),
-        ["<C-e>"] = cmp.mapping.abort(),
         ["<CR>"] = cmp.mapping.confirm({ select = true }),
       }),
       experimental = {
         ghost_text = true,
       },
     })
+    -- insert `(` after select function or method item
+    local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+    cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
   end,
 }
