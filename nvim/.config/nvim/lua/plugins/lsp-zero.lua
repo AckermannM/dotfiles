@@ -33,9 +33,11 @@ return {
     "neovim/nvim-lspconfig",
     "hrsh7th/cmp-nvim-lsp",
     "hrsh7th/nvim-cmp",
+    "onsails/lspkind.nvim",
     "williamboman/mason.nvim",
     "williamboman/mason-lspconfig.nvim",
     "jay-babu/mason-null-ls.nvim",
+    "pmizio/typescript-tools.nvim",
   },
   config = function()
     -- Add cmp_nvim_lsp capabilities settings to lspconfig
@@ -73,15 +75,18 @@ return {
       desc = "LSP actions",
       callback = function(event)
         local opts = { buffer = event.buf, remap = false }
+        local filetype = vim.api.nvim_buf_get_option(event.buf, "filetype")
+
+        if filetype == "typescript" or filetype == "typescriptreact" then
+          vim.keymap.set("n", "gd", [[:TSToolsGoToSourceDefinition<CR>]])
+        else
+          vim.keymap.set("n", "gd", function()
+            vim.lsp.buf.definition()
+          end, opts)
+        end
 
         vim.keymap.set("n", "K", function()
           vim.lsp.buf.hover()
-        end, opts)
-        -- vim.keymap.set("n", "<leader>gd", function()
-        --   telescope_builtin.lsp_definitions()
-        -- end, opts)
-        vim.keymap.set("n", "gd", function()
-          vim.lsp.buf.definition()
         end, opts)
         vim.keymap.set("n", "<leader>gD", function()
           vim.lsp.buf.declaration()
@@ -101,7 +106,6 @@ return {
         vim.keymap.set("n", "<leader>rn", function()
           vim.lsp.buf.rename()
         end, opts)
-        --vim.keymap.set({ "n", "x" }, "<leader>f", function() vim.lsp.buf.format({async = true}) end, opts)
         vim.keymap.set("n", "<leader>ca", function()
           vim.lsp.buf.code_action()
         end, opts)
@@ -110,7 +114,7 @@ return {
 
     local lspconfig = require("lspconfig")
     lspconfig.lua_ls.setup({})
-    lspconfig.ts_ls.setup({
+    require("typescript-tools").setup({
       on_attach = function(client, bufnr)
         -- Disable tsserver's formatting capability
         client.server_capabilities.documentFormattingProvider = false
@@ -146,8 +150,14 @@ return {
       },
     })
 
+    require("luasnip.loaders.from_vscode").lazy_load()
+
     local cmp = require("cmp")
+    local lspkind = require("lspkind")
     cmp.setup({
+      completion = {
+        completeopt = "menu,menuone,noinsert",
+      },
       window = {
         completion = {
           border = {
@@ -179,20 +189,23 @@ return {
         },
       },
       formatting = {
-        format = function(entry, vim_item)
-          vim_item.menu = entry.source.name
-          return vim_item
-        end,
+        format = lspkind.cmp_format({
+          mode = "symbol_text",
+          menu = {
+            nvim_lsp = " 󰘦 ",
+            luasnip = "  ",
+            path = "  ",
+          },
+        }),
       },
       sources = {
-        { name = "copilot" },
         { name = "nvim_lsp" },
+        { name = "luasnip" },
         { name = "path" },
       },
       snippet = {
         expand = function(args)
-          -- You need Neovim v0.10 to use vim.snippet
-          vim.snippet.expand(args.body)
+          require("luasnip").lsp_expand(args.body)
         end,
       },
       mapping = cmp.mapping.preset.insert({
@@ -200,7 +213,7 @@ return {
           if cmp.visible() then
             local entry = cmp.get_selected_entry()
             if not entry then
-              cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+              cmp.select_next_item({ behavior = cmp.SelectBehavior.Replace })
             else
               cmp.confirm()
             end
@@ -208,50 +221,12 @@ return {
             fallback()
           end
         end, { "i", "s" }),
-        ["j"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
-            local entry = cmp.get_selected_entry()
-            if not entry then
-              fallback()
-            else
-              cmp.select_next_item()
-            end
-          else
-            fallback()
-          end
-        end, { "i", "s" }),
-        ["k"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
-            local entry = cmp.get_selected_entry()
-            if not entry then
-              fallback()
-            else
-              cmp.select_prev_item()
-            end
-          else
-            fallback()
-          end
-        end, { "i", "s" }),
-        ["q"] = cmp.mapping(function(fallback)
-          if cmp.visible() then
-            local entry = cmp.get_selected_entry()
-            if not entry then
-              fallback()
-            else
-              cmp.abort()
-            end
-          else
-            fallback()
-          end
-        end, { "i", "s" }),
-
+        ["<C-Space>"] = cmp.mapping.complete(),
         ["<C-b>"] = cmp.mapping.scroll_docs(-4),
         ["<C-f>"] = cmp.mapping.scroll_docs(4),
+        ["<C-e>"] = cmp.mapping.close(),
         ["<CR>"] = cmp.mapping.confirm({ select = true }),
       }),
-      experimental = {
-        ghost_text = true,
-      },
     })
     -- insert `(` after select function or method item
     local cmp_autopairs = require("nvim-autopairs.completion.cmp")

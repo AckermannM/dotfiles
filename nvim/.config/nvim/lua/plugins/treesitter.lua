@@ -19,6 +19,7 @@ local M = {
         "dot",
         "json",
         "toml",
+        "c_sharp",
       },
       auto_install = true,
       highlight = { enable = true },
