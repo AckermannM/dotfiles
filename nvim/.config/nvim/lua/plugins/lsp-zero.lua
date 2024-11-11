@@ -56,7 +56,6 @@ return {
       ensure_installed = {
         "lua_ls",
         "ts_ls",
-        "emmet_language_server",
         "omnisharp",
       },
     })
@@ -78,13 +77,12 @@ return {
         local filetype = vim.api.nvim_buf_get_option(event.buf, "filetype")
 
         if filetype == "typescript" or filetype == "typescriptreact" then
-          vim.keymap.set("n", "gd", [[:TSToolsGoToSourceDefinition<CR>]])
-        else
-          vim.keymap.set("n", "gd", function()
-            vim.lsp.buf.definition()
-          end, opts)
+          vim.keymap.set("n", "<leader>gd", [[:TSToolsGoToSourceDefinition<CR>]])
         end
 
+        vim.keymap.set("n", "gd", function()
+          vim.lsp.buf.definition()
+        end, opts)
         vim.keymap.set("n", "K", function()
           vim.lsp.buf.hover()
         end, opts)
@@ -122,19 +120,6 @@ return {
 
         -- Additional on_attach configuration if needed
       end,
-    })
-    lspconfig.emmet_language_server.setup({
-      filetypes = {
-        "html",
-        "css",
-        "javascript",
-        "typescript",
-        "javascriptreact",
-        "typescriptreact",
-        "less",
-        "sass",
-        "scss",
-      },
     })
     lspconfig.omnisharp.setup({
       cmd = { "dotnet", "/home/ackermann/.local/share/nvim/mason/packages/omnisharp/libexec/OmniSharp.dll" },
