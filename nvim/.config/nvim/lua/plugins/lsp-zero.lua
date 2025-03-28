@@ -80,6 +80,9 @@ return {
           vim.keymap.set("n", "<leader>gd", [[:TSToolsGoToSourceDefinition<CR>]])
         end
 
+        vim.keymap.set("n", "<leader>e", function()
+          vim.diagnostic.open_float()
+        end, opts)
         vim.keymap.set("n", "gd", function()
           vim.lsp.buf.definition()
         end, opts)
