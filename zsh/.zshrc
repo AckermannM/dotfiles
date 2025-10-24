@@ -1,12 +1,7 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
-export PATH=$HOME/.local/bin:$PATH
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+export PATH=$HOME/.local/bin:$PATH
 export PATH=$PATH:/home/ackermann/go/bin
-export PATH=$PATH:/home/ackermann/.dotnet/tools
-export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!/\/mnt\/c\/Program Files( \(x86\))?\/nodejs/' | sed 's/:$//')
-
-export DOTNET_ROOT=$HOME/.asdf/shims/dotnet
+export PATH=$PATH:$HOME/.dotnet/tools
 
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -25,20 +20,31 @@ if [ -x /usr/bin/dircolors ]; then
   alias egrep='egrep --color=auto'
 fi
 
-alias yay="paru --bottomup"
-alias yeet="sudo pacman -Rns"
-alias vim="nvim"
-alias ll="ls -alF"
-alias gg="lazygit"
-alias ..="cd .."
-alias ...="cd ../.."
-
 eval "$(starship init zsh)"
 autoload -Uz compinit
 compinit
 
+# --- Load asdf dotnet plugin environment if available ---
+if command -v asdf >/dev/null 2>&1; then
+  if asdf plugin list 2>/dev/null | grep -q "^dotnet-core$"; then
+    plugin_path="${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/dotnet-core/set-dotnet-home.zsh"
+    if [ -f "$plugin_path" ]; then
+      . "$plugin_path"
+    fi
+  fi
+fi
+
 # WSL specific entries
 if [[ "$(uname -r)" == *microsoft* ]]; then
+  # strip unwanted Windows paths from PATH
+  PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '
+    !/\/mnt\/c\/Program Files( \(x86\))?\/nodejs/ &&
+    !/\/mnt\/c\/Program Files( \(x86\))?\/dotnet/ &&
+    !/\/mnt\/c\/Users\/[^/]+\/AppData\/Roaming\/npm/ &&
+    !/\/mnt\/c\/Users\/[^/]+\/\.dotnet/
+  ' | sed 's/:$//')
+  export PATH
+
   alias open="explorer.exe"
 
   # enable wsl2-ssh-agent if installed (adds 1password ssh support)
@@ -58,3 +64,12 @@ if [[ "$(uname -r)" == *microsoft* ]]; then
     fi
   fi
 fi
+
+alias logpath="echo '$PATH' | tr ':' '\n'"
+alias yay="paru --bottomup"
+alias yeet="sudo pacman -Rns"
+alias vim="nvim"
+alias ll="ls -alF"
+alias gg="lazygit"
+alias ..="cd .."
+alias ...="cd ../.."
