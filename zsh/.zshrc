@@ -47,16 +47,14 @@ if [[ "$(uname -r)" == *microsoft* ]]; then
   fi
 
   gcm_program_path="/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe"
+  gcm_program_path_escaped="${gcm_program_path/ /\\ }"
   current_helper=$(git config --global --get credential.helper)
 
-  if [[ -z "$current_helper" ]]; then
-    if [[ "$current_helper" -ne "$gcm_program_path" ]]; then
-      if [[ -x "$gcm_program_path" ]]; then
-        git config --global credential.helper "$gcm_program_path"
-      else
-        echo "Git Credential Manager not found."
-      fi
+  if [[ -z "$current_helper" || "$current_helper" != "$gcm_program_path_escaped" ]]; then
+    if [[ -x "$gcm_program_path" ]]; then
+      git config --global credential.helper "$gcm_program_path_escaped"
+    else
+      echo "Git Credential Manager not found."
     fi
   fi
-
 fi
