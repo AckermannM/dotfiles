@@ -16,14 +16,14 @@ bindkey -v
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    alias dir='dir --color=auto'
-    alias vdir='vdir --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi 
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+  alias dir='dir --color=auto'
+  alias vdir='vdir --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
+fi
 
 alias yay="paru --bottomup"
 alias yeet="sudo pacman -Rns"
@@ -34,7 +34,8 @@ alias ..="cd .."
 alias ...="cd ../.."
 
 eval "$(starship init zsh)"
-autoload -Uz compinit; compinit
+autoload -Uz compinit
+compinit
 
 # WSL specific entries
 if [[ "$(uname -r)" == *microsoft* ]]; then
@@ -44,4 +45,18 @@ if [[ "$(uname -r)" == *microsoft* ]]; then
   if [[ -e /usr/sbin/wsl2-ssh-agent ]]; then
     eval "$(/usr/sbin/wsl2-ssh-agent)"
   fi
+
+  gcm_program_path="/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe"
+  current_helper=$(git config --global --get credential.helper)
+
+  if [[ -z "$current_helper" ]]; then
+    if [[ "$current_helper" -ne "$gcm_program_path" ]]; then
+      if [[ -x "$gcm_program_path" ]]; then
+        git config --global credential.helper "$gcm_program_path"
+      else
+        echo "Git Credential Manager not found."
+      fi
+    fi
+  fi
+
 fi

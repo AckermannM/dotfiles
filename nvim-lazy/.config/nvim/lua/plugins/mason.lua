@@ -22,6 +22,10 @@ return {
       -- css tools
       "stylelint-lsp",
       "stylelint",
+
+      -- bash
+      "shellcheck",
+      "shfmt",
     },
   },
 }
