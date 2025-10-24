@@ -5,7 +5,8 @@ export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 export PATH=$PATH:/home/ackermann/go/bin
 export PATH=$PATH:/home/ackermann/.dotnet/tools
 export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '!/\/mnt\/c\/Program Files( \(x86\))?\/nodejs/' | sed 's/:$//')
-export DOTNET_ROOT=$HOME/.asdt/shims/dotnet
+
+export DOTNET_ROOT=$HOME/.asdf/shims/dotnet
 
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -34,3 +35,13 @@ alias ...="cd ../.."
 
 eval "$(starship init zsh)"
 autoload -Uz compinit; compinit
+
+# WSL specific entries
+if [[ "$(uname -r)" == *microsoft* ]]; then
+  alias open="explorer.exe"
+
+  # enable wsl2-ssh-agent if installed (adds 1password ssh support)
+  if [[ -e /usr/sbin/wsl2-ssh-agent ]]; then
+    eval "$(/usr/sbin/wsl2-ssh-agent)"
+  fi
+fi
