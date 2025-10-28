@@ -5,6 +5,7 @@ return {
     formatters_by_ft = {
       cs = { "csharpier" },
       zsh = { "shfmt" },
+      xml = { "xmlformat" },
     },
     -- formatters = {
     --   csharpier = function()
