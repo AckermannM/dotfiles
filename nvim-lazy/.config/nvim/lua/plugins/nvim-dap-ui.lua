@@ -8,15 +8,14 @@ return {
     dapui.setup({
       expand_lines = true,
       ---@diagnostic disable-next-line: missing-fields
-      controls = { enabled = false },
-      ---@diagnostic disable-next-line: missing-fields
       floating = { border = "rounded" },
       ---@diagnostic disable-next-line: missing-fields
       render = { max_type_length = 60, max_value_lines = 200 },
       layouts = {
         {
           elements = {
-            { id = "scopes", size = 1.0 },
+            { id = "scopes", size = 0.5 },
+            { id = "repl", size = 0.5 },
           },
           size = 15,
           position = "bottom",
