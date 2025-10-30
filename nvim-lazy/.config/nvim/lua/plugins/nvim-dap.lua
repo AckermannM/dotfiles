@@ -17,19 +17,19 @@ return {
       enrich_config = function(config, on_config)
         local new_config = vim.deepcopy(config)
 
-        if not new_config.program or new_config.program == "" then
-          local dll = dotnet.pick_dll_sync()
-          if not dll or dll == "" then
-            vim.notify("No DLL selected for debugging.", vim.log.levels.ERROR)
-            return
-          end
-          dll = vim.fn.fnamemodify(dll, ":p")
-          new_config.program = dll
+        local dll, csproj = dotnet.pick_project_and_dll_sync()
+        if not csproj or csproj == "" then
+          vim.notify("No .csproj selected for debugging.", vim.log.levels.ERROR)
+          return
         end
 
-        local project_root = dotnet.find_project_root(new_config.program)
+        dll = vim.fn.fnamemodify(dll, ":p")
+        local project_root = vim.fn.fnamemodify(csproj, ":h")
+        new_config.program = dll
         new_config.cwd = project_root
         new_config.env = dotnet.load_env(project_root)
+
+        vim.notify("Debugging DLL: " .. dll .. " from project: " .. csproj, vim.log.levels.INFO)
 
         on_config(new_config)
       end,
@@ -42,7 +42,7 @@ return {
         type = "netcoredbg",
         name = "NetCoreDbg: Smart Launch (fzf-lua)",
         request = "launch",
-        preLaunchTask = "dotnet: build current project",
+        -- preLaunchTask = "dotnet: build current project",
         stopAtEntry = false,
       },
     }

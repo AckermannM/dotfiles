@@ -6,138 +6,70 @@ if not fzf_ok then
   return M
 end
 
-function M.find_csproj(start)
+-- find all .csproj files upwards from the start directory
+local function find_solution_root(start)
   local file = start or vim.api.nvim_buf_get_name(0)
   local dir = vim.fn.isdirectory(file) == 1 and file or vim.fn.fnamemodify(file, ":h")
-
   while dir ~= "/" and dir ~= "" do
-    local hit = vim.fn.glob(dir .. "/*.csproj")
-    if hit ~= "" then
-      local proj = nil
-      local dirname = vim.fn.fnamemodify(hit, ":t")
-      for f in hit:gmatch("[^\r\n]+") do
-        if vim.fn.fnamemodify(f, ":t:r") == dirname then
-          proj = f
-          break
-        end
-        proj = proj or f
-      end
-      return proj
+    -- if dir has sln, it is root
+    local slns = vim.fn.glob(dir .. "/*.sln")
+    if slns ~= "" then
+      return dir, "sln"
     end
+    --fallback: if dir has multiple csproj, treat it as root
+    local csprojs = vim.fn.glob(dir .. "/*.csproj")
+    if csprojs ~= "" then
+      -- don't return yet we want to see of a higher dir has sln
+      local up = vim.fn.fnamemodify(dir, ":h")
+      if up == dir then
+        return dir, "csproj"
+      end
+      -- we onlyreturn here if we are at filesystem root
+    end
+
     local up = vim.fn.fnamemodify(dir, ":h")
     if up == dir then
       break
     end
     dir = up
   end
-  return nil
+  return nil, nil
+end
+
+function M.find_csprojs_for_current_solution(start)
+  local root = select(1, find_solution_root(start) or vim.fn.getcwd())
+  local results = {}
+
+  if vim.fn.executable("fd") == 1 then
+    -- scan only inside the root, not above
+    local cmd = string.format("fd -I -p -e csproj %s", vim.fn.shellescape(root))
+    local handle = io.popen(cmd)
+    if handle then
+      local out = handle:read("*a")
+      handle:close()
+      for line in out:gmatch("([^\r\n]+)") do
+        table.insert(results, vim.fn.fnamemodify(line, ":p"))
+      end
+    end
+  else
+    -- fallback: glob recursively
+    -- this is a bit slower
+    local gl = vim.fn.glob(root .. "/**/*.csproj", true, true)
+    for _, path in ipairs(gl) do
+      table.insert(results, vim.fn.fnamemodify(path, ":p"))
+    end
+  end
+  return results, root
 end
 
 -- Find the project root directory containing the .csproj file
 -- returns cwd if not found
 function M.find_project_root(start)
-  local csproj = M.find_csproj(start)
+  local csproj = M.find_csproj_upwards(start)(start)
   if csproj then
-    vim.notify("Found project root: " .. vim.fn.fnamemodify(csproj, ":h"), vim.log.levels.INFO)
     return vim.fn.fnamemodify(csproj, ":h")
   end
   return vim.fn.getcwd()
-end
-
--- Helper: find all built DLLs recursively
-local function find_dlls()
-  -- TODO: Revise filters maybe works without
-  local cmd = vim.fn.executable("fd") == 1 and "fd -I -e dll --full-path bin/Debug src -E 'Microsoft.*' -E 'System.*'"
-    or "find ./src -type f -path '*/bin/Debug/*.dll' ! -name 'Microsoft.*' ! -name 'System.*'"
-  local handle = io.popen(cmd)
-  if not handle then
-    return {}
-  end
-  local result = handle:read("*a")
-  handle:close()
-  local dlls = {}
-  for line in result:gmatch("[^\r\n]+") do
-    table.insert(dlls, line)
-  end
-  return dlls
-end
-
-local function esc_pat(s)
-  return (s or ""):gsub("(%p)", "%%%0")
-end
-
-local function score_dll(dll, proj_dir, proj_name)
-  local score = 0
-  if proj_dir and dll:find(proj_dir, 1, true) then
-    score = score + 1000
-  end
-  if proj_name then
-    local pname_pat = esc_pat(proj_name)
-    if dll:match("/" .. pname_pat .. "%.dll$") then
-      score = score + 500
-    end
-    if dll:match("/bin/Debug/net[%w%.%-]+/" .. pname_pat .. "%.dll$") then
-      score = score + 200
-    end
-  end
-  score = score - #dll
-  return score
-end
-
-function M.pick_dll(callback)
-  local dlls = find_dlls()
-  if #dlls == 0 then
-    vim.notify("No DLLs found in bin/Debug directories.", vim.log.levels.WARN)
-    return
-  end
-
-  local bufpath = vim.api.nvim_buf_get_name(0)
-  local csproj = M.find_csproj(bufpath)
-  local proj_name, proj_dir, initial_query
-
-  if csproj then
-    proj_name = vim.fn.fnamemodify(csproj, ":t:r")
-    proj_dir = vim.fn.fnamemodify(csproj, ":h")
-    initial_query = proj_name .. ".dll"
-    table.sort(dlls, function(a, b)
-      return score_dll(a, proj_dir, proj_name) > score_dll(b, proj_dir, proj_name)
-    end)
-  end
-
-  fzf.fzf_exec(dlls, {
-    prompt = "Select .NET Project DLL  ",
-    fzf_opts = {
-      ["--no-sort"] = true,
-      ["--tiebreak"] = "index",
-      ["--select-1"] = true,
-      ["--exit-0"] = true,
-      ["--query"] = initial_query or "",
-    },
-    actions = {
-      ["default"] = function(selected)
-        if not selected or #selected == 0 then
-          vim.notify("No DLL selected.", vim.log.levels.WARN)
-          return
-        end
-        callback(selected[1])
-      end,
-    },
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    fzf_colors = true,
-  })
-end
-
-function M.pick_dll_sync()
-  local co = coroutine.running()
-  local result
-  M.pick_dll(function(dll_path)
-    result = dll_path
-    if co then
-      coroutine.resume(co)
-    end
-  end)
-  coroutine.yield()
-  return result
 end
 
 function M.build_csproj(csproj_path)
@@ -176,21 +108,110 @@ end
 
 function M.load_env(project_root)
   local launch_file = (project_root or M.find_project_root()) .. "/Properties/launchSettings.json"
+
   if vim.fn.filereadable(launch_file) == 1 then
-    local ok, json = pcall(vim.fn.readfile, launch_file)
-    if ok and json and json.profiles then
-      local _, profile = next(json.profiles)
-      if profile and profile.environmentVariables then
-        return profile.environmentVariables
-      end
+    local ok, parsed = pcall(vim.fn.json_decode, table.concat(vim.fn.readfile(launch_file), "\n"))
+    if not ok or not parsed or not parsed.profiles then
+      vim.notify("Could not parse launchSettings.json, using default env vars.", vim.log.levels.WARN)
+      return {
+        ASPNETCORE_ENVIRONMENT = "Development",
+        ASPNETCORE_URLS = "http://localhost:5149",
+      }
     end
+    local profile = parsed.profiles.http or select(2, next(parsed.profiles))
+    if not profile then
+      vim.notify("No profile found in launchSettings.json, using default env vars.", vim.log.levels.WARN)
+      return {
+        ASPNETCORE_ENVIRONMENT = "Development",
+        ASPNETCORE_URLS = "http://localhost:5149",
+      }
+    end
+
+    local env = vim.deepcopy(profile.environmentVariables or {})
+    if profile.applicationUrl and profile.applicationUrl ~= "" then
+      local urls = profile.applicationUrl:gsub(";", ",")
+      env.ASPNETCORE_URLS = urls
+      vim.notify("Set ASPNETCORE_URLS to " .. urls, vim.log.levels.INFO)
+    else
+      vim.notify("No applicationUrl found in profile, using default ASPNETCORE_URLS.", vim.log.levels.WARN)
+      env.ASPNETCORE_URLS = env.ASPNETCORE_URLS or "http://localhost:5000"
+    end
+
+    return env
   end
 
-  vim.notify("Could not load launchSettings.json, using default env vars.", vim.log.levels.WARN)
+  vim.notify("No launchSettings.json found, using default env vars.", vim.log.levels.WARN)
   return {
     ASPNETCORE_ENVIRONMENT = "Development",
     ASPNETCORE_URLS = "http://localhost:5149",
   }
+end
+
+function M.find_output_dll(csproj)
+  if not csproj or csproj == "" then
+    return nil
+  end
+  local proj_dir = vim.fn.fnamemodify(csproj, ":h")
+  local proj_name = vim.fn.fnamemodify(csproj, ":t:r")
+  -- try to find a DLL matching project name under bin/Debug/net*
+  local cmd
+  if vim.fn.executable("fd") == 1 then
+    cmd = "fd -I -p -e dll " .. vim.fn.shellescape(proj_name) .. ".dll " .. vim.fn.shellescape(proj_dir)
+  else
+    cmd = "find " .. vim.fn.shellescape(proj_dir) .. " -type f -path '*/bin/Debug/*/" .. proj_name .. ".dll'"
+  end
+  local handle = io.popen(cmd)
+  if not handle then
+    return nil
+  end
+  local result = handle:read("*a")
+  handle:close()
+  local fist_line = result:match("([^\r\n]+)")
+  return fist_line and vim.fn.fnamemodify(fist_line, ":p") or nil
+end
+
+function M.pick_project_and_dll(callback)
+  local csprojs = M.find_csprojs_for_current_solution()
+  if not csprojs or #csprojs == 0 then
+    vim.notify("No .csproj files found upwards from current directory.", vim.log.levels.WARN)
+    return
+  end
+
+  fzf.fzf_exec(csprojs, {
+    prompt = "Select .NET Project (.csproj)  ",
+    actions = {
+      ["default"] = function(selected)
+        if not selected or #selected == 0 then
+          vim.notify("No project selected.", vim.log.levels.WARN)
+          return
+        end
+        local csproj_path = selected[1]
+        local dll = M.find_output_dll(csproj_path)
+        if not dll or dll == "" then
+          vim.notify("No built DLL found for project: " .. csproj_path, vim.log.levels.WARN)
+          callback(nil, csproj_path)
+          return
+        end
+        callback(dll, csproj_path)
+      end,
+    },
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    fzf_colors = true,
+  })
+end
+
+function M.pick_project_and_dll_sync()
+  local co = coroutine.running()
+  local result_dll, result_csproj
+  M.pick_project_and_dll(function(dll_path, csproj_path)
+    result_dll = dll_path
+    result_csproj = csproj_path
+    if co then
+      coroutine.resume(co)
+    end
+  end)
+  coroutine.yield()
+  return result_dll, result_csproj
 end
 
 return M

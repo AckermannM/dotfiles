@@ -7,7 +7,7 @@ return {
     overseer.register_template({
       name = "dotnet: build current project",
       builder = function()
-        local proj = dotnet.find_csproj()
+        local proj = dotnet.find_csproj_upwards(vim.api.nvim_buf_get_name(0))
         if not proj then
           return
         end
