@@ -2,7 +2,14 @@
   "position": "top",
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["hyprland/window"],
-  "modules-right": ["mpris", "network", "pulseaudio", "bluetooth", "battery", "clock"],
+  "modules-right": [
+    "mpris",
+    "network",
+    "pulseaudio",
+    "bluetooth",
+    "battery",
+    "clock",
+  ],
   "reload_style_on_change": true,
   "clock": {
     "format": "<span foreground='#f5c2e7'>  </span>{:%a %d - %H:%M}",
@@ -15,6 +22,7 @@
     "format-disconnected": "<span size='13000' foreground='#f5e0dc'>  </span>Down",
     "tooltip-format-wifi": "Signal Strenght: {signalStrength}%",
     "tooltip-format-ethernet": "Local IP: {ipaddr}\nGateway: {gwaddr}",
+    "on-click": "networkmanager_dmenu",
   },
   "pulseaudio": {
     "format": "{icon}  {volume}%",
@@ -27,7 +35,7 @@
   "battery": {
     "states": {
       "warning": 30,
-      "critical": 15
+      "critical": 15,
     },
     "format": "<span size='13000' foreground='#a6e3a1'>{icon} </span> {capacity}%",
     "format-warning": "<span size='13000' foreground='#B1E3AD'>{icon} </span> {capacity}%",
@@ -37,7 +45,7 @@
     "format-alt": "<span size='13000' foreground='#B1E3AD'>{icon} </span> {time}",
     "format-full": "<span size='13000' foreground='#B1E3AD'> </span>{capacity}%",
     "format-icons": ["", "", "", "", ""],
-    "tooltip-format": "{time}"
+    "tooltip-format": "{time}",
   },
   "bluetooth": {
     "format": "<span size='13000' foreground='#cba6f7'> </span>{status}",
