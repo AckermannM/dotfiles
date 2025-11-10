@@ -15,7 +15,6 @@ return {
       -- typescript/javascript tools
       "eslint-lsp",
       "eslint_d",
-      "angular-language-server",
       "js-debug-adapter",
       "json-lsp",
 
