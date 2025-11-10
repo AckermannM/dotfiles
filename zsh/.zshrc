@@ -73,8 +73,10 @@ if [[ "$(uname -r)" == *microsoft* ]]; then
 fi
 
 bindkey -s ^f "tmux-sessionizer\n"
-# ALT + h to launch tmux-sessionizer with session index 0
-# bindkey -s '\eh' "tmux-sessionizer -s 0\n"
+bindkey -s '\eh' "tmux-sessionizer -s 0\n"
+bindkey -s '\ej' "tmux-sessionizer -s 1\n"
+bindkey -s '\ek' "tmux-sessionizer -s 2\n"
+bindkey -s '\el' "tmux-sessionizer -s 3\n"
 
 alias logpath="echo '$PATH' | tr ':' '\n'"
 alias yay="paru --bottomup"

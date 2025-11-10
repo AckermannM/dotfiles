@@ -17,3 +17,12 @@ With paru, install the following packages:
 ```
 paru -S neovim fzf ripgrep fd tmux stow lazygit python python-pip openjdk-jre-headless
 ```
+
+Example tmux profile:
+
+```
+bind-key -r H run-shell "~/.local/bin/tmux-sessionizer ~/projects/path1"
+bind-key -r J run-shell "~/.local/bin/tmux-sessionizer ~/projects/path2/child1/"
+bind-key -r K run-shell "~/.local/bin/tmux-sessionizer ~/something-else"
+bind-key -r L run-shell "~/.local/bin/tmux-sessionizer ~/whatever"
+```
