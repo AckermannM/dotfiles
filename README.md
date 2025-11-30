@@ -26,3 +26,13 @@ bind-key -r J run-shell "~/.local/bin/tmux-sessionizer ~/projects/path2/child1/"
 bind-key -r K run-shell "~/.local/bin/tmux-sessionizer ~/something-else"
 bind-key -r L run-shell "~/.local/bin/tmux-sessionizer ~/whatever"
 ```
+
+## Notes on 1password on Arch
+
+For 1password to work with Yubikeys it needs
+
+```bash
+paru -S gnome-keyring libsecret polkit polkit-gnome seahorse
+```
+
+Then in seahorse create a new keyring for passwords and set it as **default**, it will fail to save the Yubikey otherwise.
