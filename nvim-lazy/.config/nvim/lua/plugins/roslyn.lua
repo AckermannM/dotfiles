@@ -8,35 +8,20 @@ return {
     broad_search = true,
     lock_target = true,
   },
-  dependencies = {
-    {
-      "tris203/rzls.nvim",
-      config = true,
-    },
-  },
   lazy = false,
   config = function(_, opts)
-    -- initialize the plugin
-    -- require("roslyn").setup(opts)
-
-    -- Use one of the methods in the Integration section to compose the command.
-    local mason_registry = require("mason-registry")
-
-    local rzls_path = vim.fn.expand("$MASON/packages/rzls/libexec")
-    local cmd = {
-      "roslyn",
-      "--stdio",
-      "--logLevel=Information",
-      "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
-      "--razorSourceGenerator=" .. vim.fs.joinpath(rzls_path, "Microsoft.CodeAnalysis.Razor.Compiler.dll"),
-      "--razorDesignTimePath=" .. vim.fs.joinpath(rzls_path, "Targets", "Microsoft.NET.Sdk.Razor.DesignTime.targets"),
-      "--extension",
-      vim.fs.joinpath(rzls_path, "RazorExtension", "Microsoft.VisualStudioCode.RazorExtension.dll"),
-    }
+    local mason_path = vim.fn.stdpath("data") .. "/mason"
+    local roslyn_path = mason_path .. "/packages/roslyn/libexec/Microsoft.CodeAnalysis.LanguageServer.dll"
+    local dotnet10 = vim.fn.expand("~/.asdf/installs/dotnet-core/10.0.102/dotnet")
 
     vim.lsp.config("roslyn", {
-      cmd = cmd,
-      handlers = require("rzls.roslyn_handlers"),
+      cmd = {
+        dotnet10,
+        roslyn_path,
+        "--stdio",
+        "--logLevel=Information",
+        "--extensionLogDirectory=" .. vim.fs.dirname(vim.lsp.get_log_path()),
+      },
       settings = {
         ["csharp|background_analysis"] = {
           dotnet_analyzer_diagnostics_scope = "fullSolution",

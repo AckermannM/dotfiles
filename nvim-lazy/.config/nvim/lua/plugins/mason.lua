@@ -9,7 +9,6 @@ return {
       -- dotnet tools
       "csharpier",
       "roslyn",
-      "rzls",
       "netcoredbg",
 
       -- typescript/javascript tools

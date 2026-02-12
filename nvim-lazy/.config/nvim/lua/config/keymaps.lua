@@ -11,9 +11,15 @@ vim.keymap.del({ "n", "v", "i" }, "<A-k>")
 vim.keymap.del({ "n" }, "<leader>dr")
 vim.keymap.del({ "n" }, "<leader>dw")
 
+-- delete ctrl + f keymap
+vim.keymap.del({ "n", "v", "i" }, "<C-f>")
+
 -- Move lines up and down with Shift + J/K only in visual mode
 map({ "v" }, "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 map({ "v" }, "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
+-- tmux-sessionizer
+map({ "n" }, "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>", { desc = "Open tmux-sessionizer", noremap = true })
 
 map({ "n" }, "<leader>dw", function()
   require("dapui").eval(nil, { enter = true })
