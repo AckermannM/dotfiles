@@ -135,7 +135,7 @@ format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
 [dotnet]
 symbol = "󰪮 "
 style = "bg:teal"
-format = '[[ $symbol( $version) ](fg:base bg:teal)]($style)'
+format = '[[ $symbol($version) ](fg:base bg:teal)]($style)'
 
 [rust]
 symbol = ""
