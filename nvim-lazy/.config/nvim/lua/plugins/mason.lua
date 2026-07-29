@@ -18,7 +18,7 @@ return {
       "json-lsp",
 
       -- css tools
-      "stylelint-lsp",
+      "stylelint-language-server",
       "stylelint",
 
       -- bash

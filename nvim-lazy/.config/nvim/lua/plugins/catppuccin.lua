@@ -1,9 +1,7 @@
 return {
   {
     "catppuccin",
-    version = "v1.11.0",
     opts = {
-      flavour = "mocha",
       transparent_background = true,
       float = {
         transparent = true,
@@ -13,7 +11,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "catppuccin",
+      colorscheme = "catppuccin-mocha",
     },
   },
 }
