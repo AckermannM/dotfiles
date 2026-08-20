@@ -18,8 +18,15 @@ vim.keymap.del({ "n", "v", "i" }, "<C-f>")
 map({ "v" }, "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 map({ "v" }, "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
--- herdr-sessionizer
-map({ "n" }, "<C-f>", "<cmd>silent !herdr-sessionizer<CR>", { desc = "Open herdr-sessionizer", noremap = true })
+-- herdr-sessionizer (github.com/AckermannM/herdr-sessionizer.nvim)
+-- Bound here rather than in the plugin's own lazy.nvim spec: only
+-- lua/config/keymaps.lua is guaranteed by LazyVim to load after its own
+-- default <C-f> is set. A plugin's own `config`/`keys` has no such
+-- ordering guarantee and can run before that default exists, so the
+-- `vim.keymap.del` above no-ops (or errors) and the default wins.
+map({ "n" }, "<C-f>", function()
+  require("herdr-sessionizer").open()
+end, { desc = "Open herdr-sessionizer", noremap = true })
 
 map({ "n" }, "<leader>dw", function()
   require("dapui").eval(nil, { enter = true })
