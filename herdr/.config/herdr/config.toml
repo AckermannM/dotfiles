@@ -1,0 +1,44 @@
+onboarding = false
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[ui]
+# Outer terminal window title = the focused pane's own terminal title
+# (nvim, fish, etc. set this themselves via OSC 0/2), so the title tracks
+# whichever app currently has focus, same as tmux's `set-titles on`.
+window_title = "{terminal_title}"
+
+# Create new tabs immediately with a generated name instead of prompting.
+prompt_new_tab_name = false
+
+# herdr-sessionizer: prefix+f opens the fuzzy project/workspace picker in a
+# popup; prefix+H/J/K/L jump straight to a fixed project, same as the old
+# tmux .tmux.profile.conf bindings.
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "herdr-sessionizer"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+shift+h"
+type = "shell"
+command = "herdr-sessionizer ~/projects/dotfiles"
+
+[[keys.command]]
+key = "prefix+shift+j"
+type = "shell"
+command = "herdr-sessionizer ~/projects/rangedesk"
+
+[[keys.command]]
+key = "prefix+shift+k"
+type = "shell"
+command = "herdr-sessionizer ~/projects/homelab-doc"
+
+[[keys.command]]
+key = "prefix+shift+l"
+type = "shell"
+command = "herdr-sessionizer ~/Downloads/"

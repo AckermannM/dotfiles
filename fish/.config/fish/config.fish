@@ -34,6 +34,12 @@ bind \ej 'commandline -r "herdr-sessionizer ~/projects/rangedesk"; commandline -
 bind \ek 'commandline -r "herdr-sessionizer ~/projects/homelab-doc"; commandline -f execute'
 bind \el 'commandline -r "herdr-sessionizer ~/Downloads/"; commandline -f execute'
 
+# herdr-automatic-rename: rename the herdr tab the instant a command starts,
+# instead of waiting for the next focus/tab event.
+for _f in $HOME/.config/herdr/plugins/github/herdr-automatic-rename-*/shell/hook.fish
+    test -r "$_f"; and source "$_f"; and break
+end
+
 export FZF_DEFAULT_OPTS=" \
 --color=bg+:#313244,bg:-1,spinner:#F5E0DC,hl:#F38BA8 \
 --color=fg:#CDD6F4,header:#F38BA8,info:#CBA6F7,pointer:#F5E0DC \
