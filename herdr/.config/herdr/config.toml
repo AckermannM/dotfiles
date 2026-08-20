@@ -5,10 +5,14 @@ name = "catppuccin"
 auto_switch = false
 
 [ui]
-# Outer terminal window title = the focused pane's own terminal title
-# (nvim, fish, etc. set this themselves via OSC 0/2), so the title tracks
-# whichever app currently has focus, same as tmux's `set-titles on`.
-window_title = "{terminal_title}"
+# Outer terminal window title = the focused pane's herdr-automatic-rename
+# label (nvim, fish, claude, ...), so the title tracks whichever app currently
+# has focus, same as tmux's `set-titles on`. Deliberately {tab} and not
+# {terminal_title}: {terminal_title} is the pane's raw OSC title, which for
+# Claude Code is the conversation topic, not just "claude" - {tab} is the
+# plugin-computed label instead (see AGENT_TITLES=0 in
+# herdr-automatic-rename/config.sh), so it stays just the program name.
+window_title = "{tab}"
 
 # Create new tabs immediately with a generated name instead of prompting.
 prompt_new_tab_name = false
