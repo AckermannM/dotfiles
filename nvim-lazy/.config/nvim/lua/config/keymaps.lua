@@ -18,8 +18,8 @@ vim.keymap.del({ "n", "v", "i" }, "<C-f>")
 map({ "v" }, "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
 map({ "v" }, "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
--- tmux-sessionizer
-map({ "n" }, "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>", { desc = "Open tmux-sessionizer", noremap = true })
+-- herdr-sessionizer
+map({ "n" }, "<C-f>", "<cmd>silent !herdr-sessionizer<CR>", { desc = "Open herdr-sessionizer", noremap = true })
 
 map({ "n" }, "<leader>dw", function()
   require("dapui").eval(nil, { enter = true })

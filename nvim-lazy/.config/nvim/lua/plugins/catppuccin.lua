@@ -1,8 +1,9 @@
 return {
   {
-    "catppuccin",
+    "catppuccin/nvim",
     opts = {
       transparent_background = true,
+      flavor = "mocha", -- latte, frappe, macchiato, mocha
       float = {
         transparent = true,
       },
@@ -11,7 +12,7 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "catppuccin-mocha",
+      colorscheme = "catppuccin-nvim",
     },
   },
 }
