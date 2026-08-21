@@ -72,11 +72,18 @@ if [[ "$(uname -r)" == *microsoft* ]]; then
   fi
 fi
 
-bindkey -s ^f "tmux-sessionizer\n"
-bindkey -s '\eh' "tmux-sessionizer -s 0\n"
-bindkey -s '\ej' "tmux-sessionizer -s 1\n"
-bindkey -s '\ek' "tmux-sessionizer -s 2\n"
-bindkey -s '\el' "tmux-sessionizer -s 3\n"
+bindkey -s ^f "herdr-sessionizer\n"
+bindkey -s '\eh' "herdr-sessionizer ~/projects/dotfiles\n"
+bindkey -s '\ej' "herdr-sessionizer ~/projects/rangedesk\n"
+bindkey -s '\ek' "herdr-sessionizer ~/projects/homelab-doc\n"
+bindkey -s '\el' "herdr-sessionizer ~/Downloads/\n"
+
+# herdr-automatic-rename: rename the herdr tab the instant a command starts,
+# instead of waiting for the next focus/tab event.
+for _f in ${HOME}/.config/herdr/plugins/github/herdr-automatic-rename-*/shell/hook.zsh(N); do
+  source $_f
+  break
+done
 
 alias logpath="echo '$PATH' | tr ':' '\n'"
 alias yay="paru --bottomup"
