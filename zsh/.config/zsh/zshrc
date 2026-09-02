@@ -1,0 +1,35 @@
+# ============================================================================
+# ~/.config/zsh/zshrc — sourced from the one-line ~/.zshrc
+#
+# The order below is load-bearing. Each file is listed explicitly;
+#
+#   completion -> plugins   zsh-autosuggestions' `completion` strategy needs
+#                           the completion system already initialised.
+#   fzf        -> plugins   zsh-syntax-highlighting wraps every widget that
+#                           exists at the moment it loads. fzf's widgets have
+#                           to be defined before it, or they go unhighlighted.
+#   keybindings-> prompt    starship wraps an existing zle-keymap-select widget
+#                           instead of replacing it — but only if ours is
+#                           already defined. Load it after, and the block/beam
+#                           cursor stops tracking the mode.
+#   plugins    -> herdr     fzf and the plugins bind ^R/^T/arrows; herdr's
+#                           `bindkey -s` entries go last so nothing overwrites
+#                           them.
+# ============================================================================
+_zshcfg=${XDG_CONFIG_HOME:-$HOME/.config}/zsh
+
+source $_zshcfg/path.zsh
+source $_zshcfg/history.zsh
+source $_zshcfg/options.zsh
+source $_zshcfg/keybindings.zsh
+source $_zshcfg/completion.zsh
+source $_zshcfg/fzf.zsh
+source $_zshcfg/plugins.zsh
+source $_zshcfg/colors.zsh
+source $_zshcfg/prompt.zsh
+source $_zshcfg/asdf.zsh
+source $_zshcfg/wsl.zsh
+source $_zshcfg/herdr.zsh
+source $_zshcfg/aliases.zsh
+
+unset _zshcfg
