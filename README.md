@@ -9,7 +9,7 @@ pacman -S base-devel git vim nano zsh fastfetch sudo wget
 Things to install/configure on a new machine.
 
 - [paru - package manager for Arch](https://github.com/Morganamilo/paru)
-- <del>[tmux-sessionizer](https://github.com/ThePrimeagen/tmux-sessionizer) (to `.local/bin`)</del> replaced by [herdr-sessionizer](./herdr/.local/bin/herdr-sessionizer)
+- <del>[tmux-sessionizer](https://github.com/ThePrimeagen/tmux-sessionizer) (to `.local/bin`)</del> replaced by [herdr-sessionizer](./herdr-sessionizer/.local/bin/herdr-sessionizer)
 
 With paru, install the following packages:
 

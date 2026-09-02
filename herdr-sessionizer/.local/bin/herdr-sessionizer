@@ -61,6 +61,15 @@ server_running() {
     herdr status 2>/dev/null | grep -q "status: running"
 }
 
+wait_for_server() {
+    local i
+    for ((i = 0; i < 150; i++)); do
+        server_running && return 0
+        sleep 0.1
+    done
+    return 1
+}
+
 find_dirs() {
     if server_running; then
         herdr workspace list 2>/dev/null |
@@ -80,9 +89,36 @@ find_dirs() {
     done
 }
 
+# herdr labels workspaces "[<number>] <name>", so a workspace this script
+# created with --label dotfiles comes back as "[2] dotfiles". Match both the
+# raw label (used by the [HERDR] picker entries, which show the prefix) and
+# the label with that prefix stripped (used by the directory entries).
 workspace_id_for_label() {
     herdr workspace list 2>/dev/null | jq -r --arg l "$1" \
-        '.result.workspaces[]? | select(.label==$l) | .workspace_id' | head -1
+        '.result.workspaces[]?
+         | select(.label == $l or (.label | sub("^\\[[0-9]+\\] "; "")) == $l)
+         | .workspace_id' | head -1
+}
+
+focused_workspace_id() {
+    herdr workspace list 2>/dev/null |
+        jq -r '.result.workspaces[]? | select(.focused) | .workspace_id' | head -1
+}
+
+# Focus the workspace for $dir, creating it if it does not exist yet.
+# Echoes the workspace id.
+ensure_workspace() {
+    local dir="$1" name="$2" ws_id create_out pane_id
+    ws_id=$(workspace_id_for_label "$name")
+    if [[ -n "$ws_id" ]]; then
+        herdr workspace focus "$ws_id" >/dev/null
+    else
+        create_out=$(herdr workspace create --cwd "$dir" --label "$name" --focus)
+        ws_id=$(jq -r '.result.workspace.workspace_id // empty' <<<"$create_out")
+        pane_id=$(jq -r '.result.root_pane.pane_id // empty' <<<"$create_out")
+        [[ -n "$pane_id" ]] && hydrate "$pane_id" "$dir"
+    fi
+    echo "$ws_id"
 }
 
 hydrate() {
@@ -123,20 +159,35 @@ selected_dir="${selected/#\~/$HOME}"
 selected_name=$(basename "$selected_dir" | tr . _)
 
 if ! server_running; then
+    # Cold start. `herdr` does not open the workspace for its launch cwd: a
+    # server with saved state restores the workspaces it had when it was
+    # stopped and focuses whichever one was focused then (typically the
+    # leftover "~" one), and a server with no saved state creates a single
+    # workspace from the cwd. Either way we cannot just cd and launch, so
+    # start the client in the foreground and, once its server answers the
+    # socket, focus/create the workspace we actually asked for.
+    (
+        wait_for_server || exit 0
+        # Give the restore pass a moment to publish its workspaces, otherwise
+        # we would create a duplicate of one that is about to come back.
+        for _ in $(seq 1 30); do
+            [[ -n "$(focused_workspace_id)" ]] && break
+            sleep 0.1
+        done
+        ws_id=$(ensure_workspace "$selected_dir" "$selected_name")
+        # A restore that lands after our focus would steal it back; hold the
+        # focus briefly to win that race.
+        for _ in $(seq 1 20); do
+            [[ -z "$ws_id" || "$(focused_workspace_id)" == "$ws_id" ]] && break
+            herdr workspace focus "$ws_id" >/dev/null 2>&1
+            sleep 0.1
+        done
+    ) >/dev/null 2>&1 &
+
     cd "$selected_dir" || exit 1
-    herdr
-    exit 0
+    exec herdr
 fi
 
-ws_id=$(workspace_id_for_label "$selected_name")
-
-if [[ -z "$ws_id" ]]; then
-    create_out=$(herdr workspace create --cwd "$selected_dir" --label "$selected_name" --focus)
-    ws_id=$(jq -r '.result.workspace.workspace_id' <<<"$create_out")
-    pane_id=$(jq -r '.result.root_pane.pane_id' <<<"$create_out")
-    hydrate "$pane_id" "$selected_dir"
-else
-    herdr workspace focus "$ws_id" >/dev/null
-fi
+ensure_workspace "$selected_dir" "$selected_name" >/dev/null
 
 attach_if_needed
