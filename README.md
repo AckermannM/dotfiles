@@ -81,6 +81,21 @@ for the next focus/tab event) is wired up in `zsh/.config/zsh/herdr.zsh` and
 new tab isn't immediately treated as a manual rename, which would opt it out of
 automatic naming.
 
+### Quitting herdr entirely (`hq`)
+
+tmux dies once you `exit` out of the last session; herdr's server is persistent
+by design, and `herdr server stop` alone persists the open workspaces to
+`~/.config/herdr/session.json`, so the next launch restores them — the leftover
+`~` workspace included.
+
+`hq` (alias for `herdr-quit`, in `zsh/.config/zsh/herdr.zsh`) reproduces the
+tmux behaviour: it closes *every* workspace first — herdr deletes
+`session.json` itself once the last one is gone — and then stops the server, so
+the next `herdr`/`herdr-sessionizer` is a genuine cold start.
+
+Run from inside a pane it tears down the session it is running in, so the work
+is detached with `setsid` and survives its own pane closing. Needs `jq`.
+
 ## Notes on 1password on Arch
 
 For 1password to work with Yubikeys it needs
