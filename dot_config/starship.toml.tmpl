@@ -3,7 +3,7 @@
 format = """
 [](surface0)\
 [{{ .arch }}](bg:surface0 fg:text)\
-$username\
+$sudo\
 [](bg:peach fg:surface0)\
 $directory\
 [](fg:peach bg:green)\
@@ -69,11 +69,24 @@ base = "#1e1e2e"
 mantle = "#181825"
 crust = "#11111b"
 
-[username]
-show_always = true
-style_user = "bg:surface0 fg:text"
-style_root = "bg:surface0 fg:text"
-format = '[ $user ]($style)'
+# Elevation, mirroring the shield block in .config/powershell/starship.toml.
+# That file needs two mutually exclusive env_var modules because a Windows
+# session's elevation is fixed at launch, so one of the two always has to draw
+# the separator into $directory. Here the block is inset instead: it enters
+# from surface0 and returns to surface0, so the static surface0 -> peach
+# separator below keeps working and no second module is needed.
+#
+# This is not quite the same signal as the Windows one. `sudo` reports a cached
+# sudo ticket, not a root shell, so the block appears after the first sudo of
+# the session and goes away again when the timestamp expires (~15 min).
+# Running as root does not light it up.
+#
+# The module ships disabled, hence the explicit `disabled`. It shells out once
+# per prompt to test the ticket: 12.2 ms vs 8.3 ms median here, so ~4 ms.
+[sudo]
+disabled = false
+symbol = ""
+format = '[](fg:surface0 bg:red)[ $symbol ](bg:red fg:base)[](fg:red bg:surface0)'
 
 [directory]
 style = "fg:mantle bg:peach"
