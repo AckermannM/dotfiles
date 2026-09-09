@@ -22,6 +22,7 @@ README.md
 .config/spotify-launcher.conf
 {{ end }}
 
+# Placeholders for when we might get back to Hyprland
 {{ if not .wayland }}
 .config/hypr
 .config/waybar
