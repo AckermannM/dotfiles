@@ -20,6 +20,7 @@ README.md
 .config/kitty
 .config/gtk-3.0
 .config/spotify-launcher.conf
+.config/ghostty
 {{ end }}
 
 # Placeholders for when we might get back to Hyprland
