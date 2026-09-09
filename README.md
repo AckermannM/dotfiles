@@ -23,6 +23,11 @@ Day to day:
 | `chezmoi add <file>`   | pull a change made directly in `$HOME` back into source |
 | `chezmoi cd`           | shell in the source dir, to commit and push             |
 
+`dot_config/zsh/aliases.zsh` defines `cm` for `chezmoi`, and `cmvim` for
+`chezmoi re-add ~/.config/nvim/lazy-lock.json` — pulling the lockfile back into
+source after LazyVim updates plugins. Both update the source dir only; commit
+and push from `cm cd`.
+
 ## Machines
 
 Machines differ by **capability flags**, not by name. `.chezmoi.toml.tmpl` asks
