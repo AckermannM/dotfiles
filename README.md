@@ -2,13 +2,13 @@
 
 > [!NOTE]
 > **Archived.** These dotfiles moved to [chezmoi](https://chezmoi.io); the
-> `chezmoi` branch is the live one and will replace `main`. This branch is kept
+> `main` branch is the live one and will replace `stow-archive`. This branch is kept
 > for history and for the packages not migrated yet — `gtk`, `hyprland`,
 > `hyprland-cachy`, `kitty`, `spotify`, `waybar`, `wofi` — plus the retired
 > `nvim` (superseded by `nvim-lazy`), `tmux` and `tmux-sessionizer`.
 >
 > `zsh`, `starship`, `nvim-lazy`, `herdr`, `herdr-automatic-rename` and
-> `herdr-sessionizer` are already on the `chezmoi` branch. Do not edit them
+> `herdr-sessionizer` are already on the `main` branch. Do not edit them
 > here — they are no longer stowed, and changes made here will not reach `$HOME`.
 
 With `pacman` install:
@@ -100,7 +100,7 @@ by design, and `herdr server stop` alone persists the open workspaces to
 `~` workspace included.
 
 `hq` (alias for `herdr-quit`, in `zsh/.config/zsh/herdr.zsh`) reproduces the
-tmux behaviour: it closes *every* workspace first — herdr deletes
+tmux behaviour: it closes _every_ workspace first — herdr deletes
 `session.json` itself once the last one is gone — and then stops the server, so
 the next `herdr`/`herdr-sessionizer` is a genuine cold start.
 
