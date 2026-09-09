@@ -11,6 +11,10 @@
 # migrating one of them is a plain `chezmoi add` with no edit here.
 # ---------------------------------------------------------------------------
 
+# Repo documentation, not a dotfile. Matches the target root only, so
+# .config/nvim/README.md is unaffected (chezmoi rejects a leading slash here).
+README.md
+
 {{ if not .gui }}
 .config/kitty
 .config/gtk-3.0
