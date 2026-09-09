@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# Which packages this machine does NOT get.
+#
+# Everything listed here is excluded from `chezmoi apply`. The flags come from
+# ~/.config/chezmoi/chezmoi.toml, generated once by .chezmoi.toml.tmpl.
+#
+# zsh, starship and nvim carry no flag -- they are on every machine.
+#
+# Paths for packages still sitting on the archived `main` branch are listed
+# ahead of time and are harmless no-ops until their source files exist, so
+# migrating one of them is a plain `chezmoi add` with no edit here.
+# ---------------------------------------------------------------------------
+
+{{ if not .gui }}
+.config/kitty
+.config/gtk-3.0
+.config/spotify-launcher.conf
+{{ end }}
+
+{{ if not .wayland }}
+.config/hypr
+.config/waybar
+.config/wofi
+{{ end }}
+
+{{ if not .herdr }}
+.config/herdr
+.config/herdr-automatic-rename
+.config/herdr-sessionizer
+.local/bin/herdr-sessionizer
+{{ end }}

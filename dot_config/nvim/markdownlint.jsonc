@@ -1,0 +1,27 @@
+// Base markdownlint config, passed to markdownlint-cli2 via `--config` by
+// lua/plugins/markdown.lua. It is a *base*: a project-local
+// .markdownlint-cli2.jsonc / .markdownlint.json still overrides these.
+{
+  "config": {
+    // Prose wrapping is prettier's job; long URLs and unwrapped paragraphs
+    // are not defects.
+    "MD013": false,
+
+    // Keep the rule for prose, but stop it firing inside fenced code blocks
+    // where tabs are usually the language's actual indentation.
+    "MD010": { "code_blocks": false },
+
+    // Plenty of markdown files are fragments, or start with frontmatter.
+    "MD041": false,
+
+    // Inline HTML in markdown is intentional often enough to not be a warning.
+    "MD033": false,
+
+    // Plain fences without a language are fine.
+    "MD040": false,
+
+    // Repeated headings are normal across sections (changelogs, per-topic
+    // "Usage"/"Notes"); only flag duplicates under the same parent.
+    "MD024": { "siblings_only": true }
+  }
+}

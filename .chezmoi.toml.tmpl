@@ -1,0 +1,20 @@
+{{- $wsl := contains "microsoft" (lower .chezmoi.kernel.osrelease) -}}
+{{- $gui := promptBoolOnce . "gui" "Graphical desktop session (kitty, gtk, spotify)" (not $wsl) -}}
+{{- $wayland := promptBoolOnce . "wayland" "Hyprland/wayland desktop (hypr, waybar, wofi)" $gui -}}
+{{- $herdr := promptBoolOnce . "herdr" "herdr terminal workspace manager + plugins" true -}}
+# ---------------------------------------------------------------------------
+# Generated into ~/.config/chezmoi/chezmoi.toml by `chezmoi init`.
+#
+# `wsl` is a fact about the kernel, so it is detected, never asked. The rest
+# are capability flags: asked once on a new machine, then remembered. Re-running
+# `chezmoi init` keeps whatever is already in chezmoi.toml -- to change an
+# answer, edit that file directly (it is machine-local, not in git).
+#
+# .chezmoiignore keys off these flags to decide which packages land here.
+# ---------------------------------------------------------------------------
+
+[data]
+    wsl = {{ $wsl }}
+    gui = {{ $gui }}
+    wayland = {{ $wayland }}
+    herdr = {{ $herdr }}

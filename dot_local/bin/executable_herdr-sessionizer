@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+# herdr-sessionizer: ThePrimeagen's tmux-sessionizer, ported to herdr.
+#
+# herdr has no tmux-server-per-project equivalent: there is one persistent
+# herdr server, and projects map to *workspaces* inside it (roughly what a
+# tmux session is). So instead of `tmux new-session`/`switch-client`, this
+# uses `herdr workspace create`/`focus` over herdr's socket API, and only
+# falls back to launching `herdr` itself when no server is running yet.
+
+CONFIG_FILE_NAME="herdr-sessionizer.conf"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/herdr-sessionizer"
+CONFIG_FILE="$CONFIG_DIR/$CONFIG_FILE_NAME"
+
+# config file example
+# ------------------------
+# # file: ~/.config/herdr-sessionizer/herdr-sessionizer.conf
+# # If set this overrides the default HS_SEARCH_PATHS (~/)
+# HS_SEARCH_PATHS=(~/)
+# # Additional search paths, each optionally suffixed with :depth
+# HS_EXTRA_SEARCH_PATHS=(~/projects:2)
+# # Overrides the default max search depth (1) for entries with no :depth
+# HS_MAX_DEPTH=1
+# ------------------------
+
+[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+[[ -f "$CONFIG_FILE_NAME" ]] && source "$CONFIG_FILE_NAME"
+
+VERSION="0.1.0"
+user_selected=""
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+        echo "Usage: herdr-sessionizer [SEARCH_PATH]"
+        exit 0
+        ;;
+    -v | --version)
+        echo "herdr-sessionizer version $VERSION"
+        exit 0
+        ;;
+    *)
+        user_selected="$1"
+        ;;
+    esac
+    shift
+done
+
+sanity_check() {
+    command -v herdr &>/dev/null || { echo "herdr is not installed."; exit 1; }
+    command -v fzf &>/dev/null || { echo "fzf is not installed."; exit 1; }
+    command -v jq &>/dev/null || { echo "jq is not installed."; exit 1; }
+}
+sanity_check
+
+[[ -n "$HS_SEARCH_PATHS" ]] || HS_SEARCH_PATHS=(~/)
+if [[ ${#HS_EXTRA_SEARCH_PATHS[@]} -gt 0 ]]; then
+    HS_SEARCH_PATHS+=("${HS_EXTRA_SEARCH_PATHS[@]}")
+fi
+
+server_running() {
+    herdr status 2>/dev/null | grep -q "status: running"
+}
+
+wait_for_server() {
+    local i
+    for ((i = 0; i < 150; i++)); do
+        server_running && return 0
+        sleep 0.1
+    done
+    return 1
+}
+
+find_dirs() {
+    if server_running; then
+        herdr workspace list 2>/dev/null |
+            jq -r --arg cur "${HERDR_WORKSPACE_ID:-}" \
+                '.result.workspaces[]? | select(.workspace_id != $cur) | "[HERDR] " + .label'
+    fi
+
+    for entry in "${HS_SEARCH_PATHS[@]}"; do
+        if [[ "$entry" =~ ^([^:]+):([0-9]+)$ ]]; then
+            path="${BASH_REMATCH[1]}"
+            depth="${BASH_REMATCH[2]}"
+        else
+            path="$entry"
+            depth=""
+        fi
+        [[ -d "$path" ]] && find "$path" -mindepth 1 -maxdepth "${depth:-${HS_MAX_DEPTH:-1}}" -path '*/.git' -prune -o -type d -print
+    done
+}
+
+# herdr labels workspaces "[<number>] <name>", so a workspace this script
+# created with --label dotfiles comes back as "[2] dotfiles". Match both the
+# raw label (used by the [HERDR] picker entries, which show the prefix) and
+# the label with that prefix stripped (used by the directory entries).
+workspace_id_for_label() {
+    herdr workspace list 2>/dev/null | jq -r --arg l "$1" \
+        '.result.workspaces[]?
+         | select(.label == $l or (.label | sub("^\\[[0-9]+\\] "; "")) == $l)
+         | .workspace_id' | head -1
+}
+
+focused_workspace_id() {
+    herdr workspace list 2>/dev/null |
+        jq -r '.result.workspaces[]? | select(.focused) | .workspace_id' | head -1
+}
+
+# Focus the workspace for $dir, creating it if it does not exist yet.
+# Echoes the workspace id.
+ensure_workspace() {
+    local dir="$1" name="$2" ws_id create_out pane_id
+    ws_id=$(workspace_id_for_label "$name")
+    if [[ -n "$ws_id" ]]; then
+        herdr workspace focus "$ws_id" >/dev/null
+    else
+        create_out=$(herdr workspace create --cwd "$dir" --label "$name" --focus)
+        ws_id=$(jq -r '.result.workspace.workspace_id // empty' <<<"$create_out")
+        pane_id=$(jq -r '.result.root_pane.pane_id // empty' <<<"$create_out")
+        [[ -n "$pane_id" ]] && hydrate "$pane_id" "$dir"
+    fi
+    echo "$ws_id"
+}
+
+hydrate() {
+    local pane_id="$1" dir="$2"
+    if [[ -f "$dir/.herdr-sessionizer" ]]; then
+        herdr pane run "$pane_id" "source $dir/.herdr-sessionizer" >/dev/null 2>&1
+    elif [[ -f "$HOME/.herdr-sessionizer" ]]; then
+        herdr pane run "$pane_id" "source $HOME/.herdr-sessionizer" >/dev/null 2>&1
+    fi
+}
+
+attach_if_needed() {
+    # HERDR_ENV=1 means we're already inside a herdr pane, so the focused
+    # workspace is already visible in this same client - nothing else to do.
+    # Otherwise attach this terminal to the (now-focused) session.
+    [[ -z "${HERDR_ENV:-}" ]] && herdr
+    return 0
+}
+
+if [[ -n "$user_selected" ]]; then
+    selected="$user_selected"
+else
+    selected=$(find_dirs | fzf)
+fi
+
+[[ -z "$selected" ]] && exit 0
+
+if [[ "$selected" == "[HERDR] "* ]]; then
+    ws_label="${selected#\[HERDR\] }"
+    ws_id=$(workspace_id_for_label "$ws_label")
+    [[ -z "$ws_id" ]] && exit 0
+    herdr workspace focus "$ws_id" >/dev/null
+    attach_if_needed
+    exit 0
+fi
+
+selected_dir="${selected/#\~/$HOME}"
+selected_name=$(basename "$selected_dir" | tr . _)
+
+if ! server_running; then
+    # Cold start. `herdr` does not open the workspace for its launch cwd: a
+    # server with saved state restores the workspaces it had when it was
+    # stopped and focuses whichever one was focused then (typically the
+    # leftover "~" one), and a server with no saved state creates a single
+    # workspace from the cwd. Either way we cannot just cd and launch, so
+    # start the client in the foreground and, once its server answers the
+    # socket, focus/create the workspace we actually asked for.
+    (
+        wait_for_server || exit 0
+        # Give the restore pass a moment to publish its workspaces, otherwise
+        # we would create a duplicate of one that is about to come back.
+        for _ in $(seq 1 30); do
+            [[ -n "$(focused_workspace_id)" ]] && break
+            sleep 0.1
+        done
+        ws_id=$(ensure_workspace "$selected_dir" "$selected_name")
+        # A restore that lands after our focus would steal it back; hold the
+        # focus briefly to win that race.
+        for _ in $(seq 1 20); do
+            [[ -z "$ws_id" || "$(focused_workspace_id)" == "$ws_id" ]] && break
+            herdr workspace focus "$ws_id" >/dev/null 2>&1
+            sleep 0.1
+        done
+    ) >/dev/null 2>&1 &
+
+    cd "$selected_dir" || exit 1
+    exec herdr
+fi
+
+ensure_workspace "$selected_dir" "$selected_name" >/dev/null
+
+attach_if_needed
