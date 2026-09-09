@@ -1,8 +1,9 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# The space after .arch is needed for proper spacing of the icon
 format = """
 [](surface0)\
-[{{ .arch }}](bg:surface0 fg:text)\
+[{{ .arch }} ](bg:surface0 fg:text)\
 $sudo\
 ${custom.not_elevated}\
 $directory\
