@@ -24,10 +24,11 @@ $env:XDG_CONFIG_HOME = Join-Path $HOME '.config'
 # right colour (red after an ADMIN block, purple otherwise).
 if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $env:STARSHIP_ELEVATED     = 'ADMIN'
+    $env:STARSHIP_ELEVATED = 'ADMIN'
     $env:STARSHIP_NOT_ELEVATED = $null
-} else {
-    $env:STARSHIP_ELEVATED     = $null
+}
+else {
+    $env:STARSHIP_ELEVATED = $null
     $env:STARSHIP_NOT_ELEVATED = '1'
 }
 
@@ -35,7 +36,9 @@ if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::
 
 Set-Alias -Name gg -Value lazygit
 
-function lc {
+$env:LAZYCLOCKING_SAP_HOST = "https://p04web.putzmeister.com" # only accessible within the company network
+$env:LAZYCLOCKING_THEME = "dracula"
+function lc {    
     & "$env:LOCALAPPDATA\Programs\LazyClocking\LazyClocking.exe" @args
 }
 
