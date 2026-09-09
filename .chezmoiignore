@@ -42,11 +42,15 @@ README.md
 .config/powershell
 {{ end }}
 
-# Windows takes the PowerShell package and herdr's own config.toml, but not the
-# herdr plugin packages. The unflagged packages (zsh, nvim, starship) are
-# Linux-shaped, and .config/starship.toml in particular is the Catppuccin Mocha
-# prompt -- Windows uses the Dracula one at .config/powershell/starship.toml
-# instead. Drop a line from here to opt in.
+# Windows takes the PowerShell package, herdr's own config.toml and lazygit,
+# but not the herdr plugin packages. The other unflagged packages (zsh, nvim,
+# starship) are Linux-shaped, and .config/starship.toml in particular is the
+# Catppuccin Mocha prompt -- Windows uses the Dracula one at
+# .config/powershell/starship.toml instead. Drop a line from here to opt in.
+#
+# .config/lazygit is absent from the list below on purpose: it is one templated
+# file that picks its own palette off the .windows flag, so it needs no second
+# copy the way starship does.
 #
 # Both herdr plugins are excluded here rather than by the .herdr flag, because
 # the flag is now true on Windows too (it gates .config/herdr/config.toml):

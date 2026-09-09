@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jesseduffield/lazygit/master/schema/config.json
+# ---------------------------------------------------------------------------
+# lazygit. Managed by chezmoi.
+#
+# One file for both platforms -- only the colour scheme is conditional, the
+# same split starship already has: Catppuccin Mocha on Linux, Dracula on
+# Windows. Anything non-visual added later belongs outside the if/else so it
+# is shared.
+#
+# Path. lazygit resolves its config dir through adrg/xdg, which checks
+# XDG_CONFIG_HOME first on *every* platform, Windows included (only the
+# fallback is OS-specific -- %LOCALAPPDATA% there). profile.ps1 sets
+# XDG_CONFIG_HOME to ~/.config, so this file lands at ~/.config/lazygit on
+# both and needs no AppData branch. The catch: that variable is set by the
+# profile, so lazygit has to be started from a pwsh session that loaded it --
+# which is how it is started, the `gg` alias is defined in the same profile.
+# Launched from a bare cmd.exe it would read %LOCALAPPDATA%\lazygit instead
+# and come up unthemed. `lazygit --print-config-dir` prints what it resolved.
+#
+# Themes are vendored from upstream rather than merged in at runtime with
+# `--use-config-file`, so a new machine has nothing to clone:
+#   Linux   catppuccin/lazygit, themes-mergable/mocha/green.yml. Green
+#           (#a6e3a1) is the accent; it is the same green the starship prompt
+#           uses for its git segment. The accent moves two keys only --
+#           activeBorderColor and cherryPickedCommitFgColor -- the rest of the
+#           flavour, authorColors lavender (#b4befe) included, is shared by
+#           every mocha accent.
+#   Windows dracula/lazygit, config/dracula.yml -- re-indented under `gui:`,
+#           where lazygit wants `theme`. Upstream still ships it top-level,
+#           which current lazygit ignores.
+# ---------------------------------------------------------------------------
+gui:
+  theme:
+{{- if .windows }}
+    activeBorderColor:
+      - '#ff79c6'
+      - bold
+    inactiveBorderColor:
+      - '#bd93f9'
+    searchingActiveBorderColor:
+      - '#8be9fd'
+      - bold
+    optionsTextColor:
+      - '#6272a4'
+    selectedLineBgColor:
+      - '#6272a4'
+    inactiveViewSelectedLineBgColor:
+      - bold
+    cherryPickedCommitFgColor:
+      - '#6272a4'
+    cherryPickedCommitBgColor:
+      - '#8be9fd'
+    markedBaseCommitFgColor:
+      - '#8be9fd'
+    markedBaseCommitBgColor:
+      - '#f1fa8c'
+    unstagedChangesColor:
+      - '#ff5555'
+    defaultFgColor:
+      - '#f8f8f2'
+{{- else }}
+    activeBorderColor:
+      - '#a6e3a1'
+      - bold
+    inactiveBorderColor:
+      - '#a6adc8'
+    searchingActiveBorderColor:
+      - '#f9e2af'
+    optionsTextColor:
+      - '#89b4fa'
+    selectedLineBgColor:
+      - '#313244'
+    inactiveViewSelectedLineBgColor:
+      - '#6c7086'
+    cherryPickedCommitFgColor:
+      - '#a6e3a1'
+    cherryPickedCommitBgColor:
+      - '#45475a'
+    markedBaseCommitFgColor:
+      - '#89b4fa'
+    markedBaseCommitBgColor:
+      - '#f9e2af'
+    unstagedChangesColor:
+      - '#f38ba8'
+    defaultFgColor:
+      - '#cdd6f4'
+
+  authorColors:
+    '*': '#b4befe'
+{{- end }}
