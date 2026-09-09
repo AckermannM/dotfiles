@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------------------
+# Windows prompt. Dracula, to sit apart from the Catppuccin Mocha prompt in
+# .config/starship.toml that the Linux machines use. Same silhouette as that
+# one: a round cap at each end (U+E0B6 / U+E0B4) with angular U+E0B0 separators
+# between segments. Only the palette differs.
+#
+# Deliberately lean. Every language-detection module shells out for a version
+# string, and process creation on the work laptop costs ~100 ms because Defender
+# for Endpoint hooks it -- so $nodejs, $dotnet and friends would each add ~100 ms
+# per prompt. As written this renders in ~93 ms in a plain directory and
+# ~250 ms in a large repo, nearly all of it the starship spawn itself.
+# ---------------------------------------------------------------------------
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+palette = 'dracula'
+
+format = """
+[](purple)\
+[󰍲 ](bg:purple fg:bg)\
+${env_var.elevated}\
+${env_var.normal}\
+$directory\
+[](fg:line bg:comment)\
+$git_branch\
+$git_status\
+[](fg:comment bg:purple)\
+$time\
+[](fg:purple)\
+$line_break$character"""
+
+# Elevation. profile.ps1 sets exactly one of these two variables -- a session
+# cannot gain or lose elevation, so there is nothing to re-check per prompt.
+# starship's own `sudo` module is Linux-only by default (allow_windows = false).
+#
+# Two mutually exclusive modules rather than one, because the separator leading
+# into $directory has to be drawn by whatever segment actually precedes it:
+# purple when there is no ADMIN block, red when there is. A single static
+# separator cannot do that, and leaving one in place put an orphan purple
+# triangle after the red block.
+[env_var.elevated]
+variable = "STARSHIP_ELEVATED"
+format = "[](fg:purple bg:red)[  ](bg:red fg:bg)[](fg:red bg:line)"
+
+[env_var.normal]
+variable = "STARSHIP_NOT_ELEVATED"
+format = "[](fg:purple bg:line)"
+[directory]
+style = "bg:line fg:fg"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:comment fg:fg"
+format = '[ $symbol $branch ]($style)'
+
+# starship reads the repo in-process via gitoxide, so this costs a few ms rather
+# than the ~165 ms a `git status` subprocess costs on this machine.
+[git_status]
+style = "bg:comment fg:yellow"
+format = '[$all_status$ahead_behind ]($style)'
+
+# Mirrors the Linux prompt's clock: %R (HH:MM) with the same U+F43A glyph.
+# Internal to starship -- no subprocess, so it costs nothing measurable here.
+[time]
+disabled = false
+time_format = "%R"
+format = '[  $time ](fg:bg bg:purple)'
+[character]
+success_symbol = "[❯](bold purple)"
+error_symbol = "[❯](bold red)"
+
+[palettes.dracula]
+bg = "#282a36"
+line = "#44475a"
+fg = "#f8f8f2"
+comment = "#6272a4"
+cyan = "#8be9fd"
+green = "#50fa7b"
+orange = "#ffb86c"
+pink = "#ff79c6"
+purple = "#bd93f9"
+red = "#ff5555"
+yellow = "#f1fa8c"

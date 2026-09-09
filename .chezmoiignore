@@ -4,7 +4,8 @@
 # Everything listed here is excluded from `chezmoi apply`. The flags come from
 # ~/.config/chezmoi/chezmoi.toml, generated once by .chezmoi.toml.tmpl.
 #
-# zsh, starship and nvim carry no flag -- they are on every machine.
+# zsh, starship and nvim carry no flag -- they are on every machine, except
+# that Windows takes none of them (see the windows block at the bottom).
 #
 # Paths for packages still sitting on the archived `main` branch are listed
 # ahead of time and are harmless no-ops until their source files exist, so
@@ -32,4 +33,21 @@ README.md
 .config/herdr-automatic-rename
 .config/herdr-sessionizer
 .local/bin/herdr-sessionizer
+{{ end }}
+
+# The PowerShell package is Windows-only: profile plus its own starship config.
+{{ if not .windows }}
+.config/powershell
+{{ end }}
+
+# Windows currently takes the PowerShell package and nothing else. The unflagged
+# packages (zsh, nvim, starship) are Linux-shaped, and .config/starship.toml in
+# particular is the Catppuccin Mocha prompt -- Windows uses the Dracula one at
+# .config/powershell/starship.toml instead. Drop a line from here to opt in.
+{{ if .windows }}
+.config/nvim
+.config/starship.toml
+.config/zsh
+.zshrc
+.local
 {{ end }}

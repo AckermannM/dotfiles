@@ -1,20 +1,61 @@
-{{- $wsl := contains "microsoft" (lower .chezmoi.kernel.osrelease) -}}
-{{- $gui := promptBoolOnce . "gui" "Graphical desktop session (kitty, gtk, spotify)" (not $wsl) -}}
+{{- $windows := eq .chezmoi.os "windows" -}}
+{{- $wsl := false -}}
+{{- if hasKey .chezmoi.kernel "osrelease" -}}
+{{-   $wsl = contains "microsoft" (lower .chezmoi.kernel.osrelease) -}}
+{{- end -}}
+{{- $distro := "" -}}
+{{- if hasKey .chezmoi "osRelease" -}}
+{{-   $distro = lower (default "" .chezmoi.osRelease.id) -}}
+{{- end -}}
+{{- $arch := "󰌽" -}}
+{{- if $windows -}}
+{{-   $arch = "󰍲" -}}
+{{- else if has $distro (list "arch" "cachyos" "artix" "endeavouros") -}}
+{{-   $arch = "󰣇" -}}
+{{- end -}}
+{{- $gui := promptBoolOnce . "gui" "Graphical desktop session (kitty, gtk, spotify)" (and (not $wsl) (not $windows)) -}}
 {{- $wayland := promptBoolOnce . "wayland" "Hyprland/wayland desktop (hypr, waybar, wofi)" $gui -}}
-{{- $herdr := promptBoolOnce . "herdr" "herdr terminal workspace manager + plugins" true -}}
+{{- $herdr := promptBoolOnce . "herdr" "herdr terminal workspace manager + plugins" (not $windows) -}}
 # ---------------------------------------------------------------------------
 # Generated into ~/.config/chezmoi/chezmoi.toml by `chezmoi init`.
 #
-# `wsl` is a fact about the kernel, so it is detected, never asked. The rest
-# are capability flags: asked once on a new machine, then remembered. Re-running
-# `chezmoi init` keeps whatever is already in chezmoi.toml -- to change an
-# answer, edit that file directly (it is machine-local, not in git).
+# `windows` and `wsl` are facts about the machine, so they are detected, never
+# asked. The rest are capability flags: asked once on a new machine, then
+# remembered. Re-running `chezmoi init` keeps whatever is already in
+# chezmoi.toml -- to change an answer, edit that file directly (it is
+# machine-local, not in git).
+#
+# `arch` is the OS glyph the prompt shows. Resolved here rather than by
+# starship's `os` module, which spent 86-101 ms per prompt to pick a static
+# icon. Windows gets the Microsoft glyph; Arch-family distros the Arch one.
+#
+# The `kernel` map is only populated on Linux, hence the hasKey guard: reading
+# .chezmoi.kernel.osrelease unguarded is a hard template error on Windows.
 #
 # .chezmoiignore keys off these flags to decide which packages land here.
 # ---------------------------------------------------------------------------
 
 [data]
+    arch = "{{ $arch }}"
+    windows = {{ $windows }}
     wsl = {{ $wsl }}
     gui = {{ $gui }}
     wayland = {{ $wayland }}
     herdr = {{ $herdr }}
+{{ if $windows }}
+# `chezmoi cd` uses cd.command, else it tries to detect the shell, else an
+# OS-specific default -- on Windows that is %COMSPEC%, i.e. cmd.exe, which has
+# neither the PowerShell profile nor starship. Pin it to pwsh 7.
+#
+# The App Execution Alias under LOCALAPPDATA, deliberately not the real binary
+# under C:\Program Files\WindowsApps\Microsoft.PowerShell_<version>_x64__.../
+# pwsh.exe: pwsh installs from the Store as MSIX, so the real path carries the
+# version number and moves on every update. The alias is stable across upgrades.
+#
+# No cd.args -- pwsh with no arguments loads the profile, which is what pulls in
+# starship. -NoProfile or -NoLogo here would defeat the point.
+#
+# Linux needs no equivalent: $SHELL is set there and chezmoi honours it.
+[cd]
+    command = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\Microsoft\WindowsApps\pwsh.exe'
+{{ end }}
