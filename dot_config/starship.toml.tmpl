@@ -4,7 +4,7 @@ format = """
 [](surface0)\
 [{{ .arch }}](bg:surface0 fg:text)\
 $sudo\
-[](bg:peach fg:surface0)\
+${custom.not_elevated}\
 $directory\
 [](fg:peach bg:green)\
 $git_branch\
@@ -69,24 +69,36 @@ base = "#1e1e2e"
 mantle = "#181825"
 crust = "#11111b"
 
-# Elevation, mirroring the shield block in .config/powershell/starship.toml.
-# That file needs two mutually exclusive env_var modules because a Windows
-# session's elevation is fixed at launch, so one of the two always has to draw
-# the separator into $directory. Here the block is inset instead: it enters
-# from surface0 and returns to surface0, so the static surface0 -> peach
-# separator below keeps working and no second module is needed.
+# Elevation, mirroring the shield block in .config/powershell/starship.toml,
+# and built the same way: two mutually exclusive modules, exactly one of which
+# fires, so the separator running into $directory is drawn in the right colour
+# (red after the shield, surface0 otherwise). There is deliberately no static
+# separator left in `format` for them -- one there would render in both cases
+# and leave an orphan triangle hanging off the shield.
 #
-# This is not quite the same signal as the Windows one. `sudo` reports a cached
-# sudo ticket, not a root shell, so the block appears after the first sudo of
-# the session and goes away again when the timestamp expires (~15 min).
-# Running as root does not light it up.
+# Windows can resolve elevation once at profile load and export a variable,
+# because a session cannot gain or lose it. A sudo ticket can expire mid
+# session, so both modules have to test for it per prompt, and `custom` is the
+# only module that can test for its absence. That means two `sudo -n` calls per
+# prompt: 14.2 ms median here, against 12.2 ms for the sudo module alone and
+# 8.3 ms with neither.
 #
-# The module ships disabled, hence the explicit `disabled`. It shells out once
-# per prompt to test the ticket: 12.2 ms vs 8.3 ms median here, so ~4 ms.
+# This is also not the same signal as the Windows one: `sudo` reports a cached
+# ticket, not a root shell, so the shield appears after the first sudo of the
+# session and goes away when the timestamp expires (~15 min). Running as root
+# does not light it up.
+#
+# The sudo module ships disabled, hence the explicit `disabled`.
 [sudo]
 disabled = false
 symbol = ""
-format = '[](fg:surface0 bg:red)[ $symbol ](bg:red fg:base)[](fg:red bg:surface0)'
+format = '[](fg:surface0 bg:red)[ $symbol ](bg:red fg:base)[](fg:red bg:peach)'
+
+# The other half of the pair. No `command`: only `when` matters, and the format
+# is the plain surface0 -> peach separator the static one used to be.
+[custom.not_elevated]
+when = "! sudo -n true 2>/dev/null"
+format = '[](fg:surface0 bg:peach)'
 
 [directory]
 style = "fg:mantle bg:peach"
