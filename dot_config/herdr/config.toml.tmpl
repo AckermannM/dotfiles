@@ -56,22 +56,30 @@ default_shell = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\Microso
 {{- end }}
 
 [ui]
-{{- if not .windows }}
+{{- if .wsl }}
+# Leave the outer terminal title alone here. herdr >= 0.8.2 writes that title
+# itself and its default is "{hostname}: {workspace}", which is where
+# "arch-wsl-am: [1] dotfiles" comes from -- dropping the key does not stop
+# herdr writing a title, it just falls back to that default. "" is the
+# documented way to have it write nothing, leaving Windows Terminal's own
+# profile-driven title in place.
+window_title = ""
+{{- else if not .windows }}
 # Outer terminal window title = the focused pane's herdr-automatic-rename
-# label (nvim, fish, claude, ...), so the title tracks whichever app currently
-# has focus, same as tmux's `set-titles on`. Deliberately {tab} and not
+# label (nvim, claude, ...), so the title tracks whichever app currently has
+# focus, same as tmux's `set-titles on`. Deliberately {tab} and not
 # {terminal_title}: {terminal_title} is the pane's raw OSC title, which for
 # Claude Code is the conversation topic, not just "claude" - {tab} is the
 # plugin-computed label instead (see AGENT_TITLES=0 in
 # herdr-automatic-rename/config.sh), so it stays just the program name.
 #
-# Linux only, and worth re-checking: on herdr 0.7.5-preview (the Windows
-# build) `herdr config check` reports "unknown config key ui.window_title;
-# ignoring key" -- there is no window_title anywhere in `herdr
-# --default-config`, and the window title is driven by the client.window_title
-# API instead, which is what the plugin calls. Kept here because the Linux box
-# may well be on a version where the key is real; drop it if `herdr config
-# check` flags it there too, since the plugin sets the title either way.
+# The plugin cannot write the window title itself -- it names tabs and panes,
+# and its README calls the title "a surface the plugin cannot write itself".
+# Routing {tab} through this key is what carries its label up to the title.
+#
+# Omitted on Windows: that box is on herdr 0.7.5-preview, where the key does
+# not exist yet and `herdr config check` reports "unknown config key
+# ui.window_title; ignoring key".
 window_title = "{tab}"
 {{- end }}
 
