@@ -40,11 +40,27 @@ README.md
 .config/powershell
 {{ end }}
 
-# Windows currently takes the PowerShell package and nothing else. The unflagged
-# packages (zsh, nvim, starship) are Linux-shaped, and .config/starship.toml in
-# particular is the Catppuccin Mocha prompt -- Windows uses the Dracula one at
-# .config/powershell/starship.toml instead. Drop a line from here to opt in.
+# Windows takes the PowerShell package and herdr's own config.toml, but not the
+# herdr plugin packages. The unflagged packages (zsh, nvim, starship) are
+# Linux-shaped, and .config/starship.toml in particular is the Catppuccin Mocha
+# prompt -- Windows uses the Dracula one at .config/powershell/starship.toml
+# instead. Drop a line from here to opt in.
+#
+# Both herdr plugins are excluded here rather than by the .herdr flag, because
+# the flag is now true on Windows too (it gates .config/herdr/config.toml):
+#
+#   herdr-automatic-rename -- upstream declares platforms = ["linux", "macos"]
+#     in its herdr-plugin.toml, and every one of its 20+ event hooks shells out
+#     to `bash automatic-rename.sh`. It cannot run here. Shipping its config.sh
+#     alone would only look like the plugin was set up. Delete this line if
+#     upstream ever adds Windows.
+#   herdr-sessionizer -- a bash script, and its keybindings hard-code ~/projects
+#     paths that do not exist on this machine. Not wanted on Windows.
+#
+# .local/bin/herdr-sessionizer needs no line of its own: .local below covers it.
 {{ if .windows }}
+.config/herdr-automatic-rename
+.config/herdr-sessionizer
 .config/nvim
 .config/starship.toml
 .config/zsh

@@ -1,0 +1,114 @@
+# ---------------------------------------------------------------------------
+# herdr config, shared by Linux and Windows. The OS differences are small
+# enough to keep inline rather than split into two files: theme, the Windows
+# default_shell, and the sessionizer keybindings.
+#
+# Windows gotcha worth knowing before debugging anything here: herdr honours
+# XDG_CONFIG_HOME, so which file it reads depends on how it was launched --
+# ~/.config/herdr/config.toml from a pwsh session (profile.ps1 sets XDG) but
+# %APPDATA%\herdr\config.toml from the Start menu. The two drifted silently
+# once already. A user-scope HERDR_CONFIG_PATH environment variable now pins
+# both launch paths to this file. If an edit here ever appears not to take
+# effect, run `herdr --help`: it prints the resolved `Config:` path.
+# ---------------------------------------------------------------------------
+
+onboarding = false
+
+[theme]
+{{- if .windows }}
+# Dracula on Windows, matching the PowerShell starship prompt and Windows
+# Terminal. Palette is the axis that tells the three environments apart.
+name = "dracula"
+{{- else }}
+# "catppuccin" IS Mocha -- it is herdr's built-in dark Catppuccin, paired with
+# "catppuccin-latte" as the light one. The built-in list has no separate
+# "mocha" spelling, and `herdr config check` does not validate theme names
+# (it accepts any string and silently falls back), so only use names from
+# `herdr --default-config`.
+name = "catppuccin"
+{{- end }}
+auto_switch = false
+{{ if .windows }}
+[theme.custom]
+# Carried over from the pre-chezmoi Windows config.
+panel_bg = "transparent"
+{{ end }}
+[terminal]
+{{- if .windows }}
+# herdr's Windows default is Windows PowerShell 5.1 at
+# System32\WindowsPowerShell\v1.0\powershell.exe, whose profile is a
+# deliberate fallback-only stub with no starship -- that is what produced the
+# bare "PS C:\...>" prompt in new panes. Point it at pwsh 7 instead, so
+# ~/.config/powershell/profile.ps1 loads and starship renders.
+#
+# This is the App Execution Alias, deliberately not the real binary under
+# C:\Program Files\WindowsApps\Microsoft.PowerShell_<version>_x64__.../ :
+# pwsh installs from the Store as MSIX, so the real path carries the version
+# number and moves on every update. The alias is stable across upgrades.
+#
+# herdr still classifies this as powershell-family (it matches on
+# powershell.exe / pwsh / pwsh.exe), so it keeps wrapping the prompt with the
+# OSC 9;9 cwd report that `new_cwd = "follow"` relies on -- that wrapper
+# captures starship's prompt function rather than replacing it.
+default_shell = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\Microsoft\WindowsApps\pwsh.exe'
+{{- else }}
+# No default_shell needed: $SHELL is set on Linux and herdr honours it.
+{{- end }}
+
+[ui]
+{{- if not .windows }}
+# Outer terminal window title = the focused pane's herdr-automatic-rename
+# label (nvim, fish, claude, ...), so the title tracks whichever app currently
+# has focus, same as tmux's `set-titles on`. Deliberately {tab} and not
+# {terminal_title}: {terminal_title} is the pane's raw OSC title, which for
+# Claude Code is the conversation topic, not just "claude" - {tab} is the
+# plugin-computed label instead (see AGENT_TITLES=0 in
+# herdr-automatic-rename/config.sh), so it stays just the program name.
+#
+# Linux only, and worth re-checking: on herdr 0.7.5-preview (the Windows
+# build) `herdr config check` reports "unknown config key ui.window_title;
+# ignoring key" -- there is no window_title anywhere in `herdr
+# --default-config`, and the window title is driven by the client.window_title
+# API instead, which is what the plugin calls. Kept here because the Linux box
+# may well be on a version where the key is real; drop it if `herdr config
+# check` flags it there too, since the plugin sets the title either way.
+window_title = "{tab}"
+{{- end }}
+
+# Create new tabs immediately with a generated name instead of prompting.
+prompt_new_tab_name = false
+{{ if not .windows }}
+# herdr-sessionizer: prefix+f opens the fuzzy project/workspace picker in a
+# popup; prefix+H/J/K/L jump straight to a fixed project, same as the old
+# tmux .tmux.profile.conf bindings.
+#
+# Linux only. The sessionizer is a bash script living at
+# ~/.local/bin/herdr-sessionizer, and these bindings hard-code ~/projects
+# paths that do not exist on the Windows machine.
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "herdr-sessionizer"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+shift+h"
+type = "shell"
+command = "herdr-sessionizer ~/projects/dotfiles"
+
+[[keys.command]]
+key = "prefix+shift+j"
+type = "shell"
+command = "herdr-sessionizer ~/projects/rangedesk"
+
+[[keys.command]]
+key = "prefix+shift+k"
+type = "shell"
+command = "herdr-sessionizer ~/projects/homelab-doc"
+
+[[keys.command]]
+key = "prefix+shift+l"
+type = "shell"
+command = "herdr-sessionizer ~/Downloads/"
+{{- end }}

@@ -5,7 +5,9 @@
 {{- end -}}
 {{- $distro := "" -}}
 {{- if hasKey .chezmoi "osRelease" -}}
-{{-   $distro = lower (default "" .chezmoi.osRelease.id) -}}
+{{-   if hasKey .chezmoi.osRelease "id" -}}
+{{-     $distro = lower .chezmoi.osRelease.id -}}
+{{-   end -}}
 {{- end -}}
 {{- $arch := "󰌽" -}}
 {{- if $windows -}}
@@ -15,7 +17,7 @@
 {{- end -}}
 {{- $gui := promptBoolOnce . "gui" "Graphical desktop session (kitty, gtk, spotify)" (and (not $wsl) (not $windows)) -}}
 {{- $wayland := promptBoolOnce . "wayland" "Hyprland/wayland desktop (hypr, waybar, wofi)" $gui -}}
-{{- $herdr := promptBoolOnce . "herdr" "herdr terminal workspace manager + plugins" (not $windows) -}}
+{{- $herdr := promptBoolOnce . "herdr" "herdr terminal workspace manager" true -}}
 # ---------------------------------------------------------------------------
 # Generated into ~/.config/chezmoi/chezmoi.toml by `chezmoi init`.
 #
@@ -31,6 +33,13 @@
 #
 # The `kernel` map is only populated on Linux, hence the hasKey guard: reading
 # .chezmoi.kernel.osrelease unguarded is a hard template error on Windows.
+#
+# `osRelease` needs a guard on the inner key, not just on the map: on Windows
+# .chezmoi.osRelease exists but is empty, so `hasKey .chezmoi "osRelease"` is
+# true while reading .id off it is still a hard error under missingkey=error.
+# `default ""` cannot rescue it -- the lookup fails before default is reached.
+# That is why `chezmoi init` used to fail here and this file had to be written
+# by hand.
 #
 # .chezmoiignore keys off these flags to decide which packages land here.
 # ---------------------------------------------------------------------------
