@@ -42,6 +42,14 @@ README.md
 .config/powershell
 {{ end }}
 
+# Symlinks into /mnt/c, so they only mean anything under WSL -- on a native
+# Linux box they would be five dangling links. This is the first thing the
+# `wsl` flag actually gates. (Windows is covered already: the `.local` line in
+# the block below takes the whole tree.)
+{{ if not .wsl }}
+.local/bin/windows
+{{ end }}
+
 # Windows takes the PowerShell package, herdr's own config.toml and lazygit,
 # but not the herdr plugin packages. The other unflagged packages (zsh, nvim,
 # starship) are Linux-shaped, and .config/starship.toml in particular is the

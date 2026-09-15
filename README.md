@@ -80,6 +80,130 @@ Still on `main`, not yet migrated: `gtk`, `hyprland`, `hyprland-cachy`,
 `kitty`, `spotify`, `waybar`, `wofi`, and the retired `nvim`, `tmux` and
 `tmux-sessionizer`.
 
+## WSL
+
+WSL appends the whole Windows `PATH` — around sixty entries — to every Linux
+shell it starts. That is how Git-for-Windows' MSYS binaries (`vi`, `egrep`,
+`zgrep`, `shasum`, `json_pp`, `start`, `notepad`) and the Windows node and
+dotnet toolchains end up shadowing or duplicating the native packages, and
+every one of those directories is a DrvFs `stat` on each command lookup and
+completion.
+
+Turn it off per distro, as root:
+
+```
+sudo tee -a /etc/wsl.conf <<'EOF'
+
+[interop]
+appendWindowsPath = false
+EOF
+wsl.exe --terminate <distro>     # from Windows; the file is read at boot
+```
+
+`enabled` is left at its default, so interop still runs `.exe` files — only the
+`PATH` import goes.
+
+This is not a dotfile chezmoi can manage: `/etc/wsl.conf` sits outside `$HOME`
+and needs root. It has to be redone on each new distro, and
+[`dot_config/zsh/wsl.zsh`](./dot_config/zsh/wsl.zsh) is written to survive one
+where it has not been — it strips `/mnt/<drive>/...` off `PATH` itself before
+adding anything.
+
+What goes back in is the explicit list in that file, appended *behind* the
+Linux entries so a native binary of the same name always wins:
+
+| directory                                      | wanted for                                                      |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| `~/.local/bin/windows`                         | symlinks: `explorer.exe` (the `open` alias), `clip.exe`, `cmd.exe`, `wsl.exe`, `where.exe` |
+| `%LOCALAPPDATA%\Microsoft\WindowsApps`         | App Execution Aliases: `pwsh.exe`, `winget.exe`, `wt.exe`         |
+| `C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin` | `az`                                                           |
+| `%LOCALAPPDATA%\Programs\Microsoft VS Code\bin` | `code`                                                           |
+| `C:\Program Files\Docker\Docker\resources\bin` | `docker`, `docker-compose`, `kubectl` — no native docker here     |
+
+Deliberately absent:
+
+- **Git Credential Manager.** Needs no `PATH` entry: `wsl.zsh` writes the
+  absolute path into `credential.helper`, so it is unaffected by any of this.
+- **`C:\Program Files\nodejs`, `dotnet`, `%APPDATA%\npm`, `~\.dotnet\tools`.**
+  Windows toolchains in a Linux shell; asdf and pacman own these here. The
+  `awk` filter `wsl.zsh` used to carry existed only to strip exactly these.
+- **Git-for-Windows' `usr\bin` and `mingw64\bin`.** MSYS builds of `vi`,
+  `egrep`, `zgrep`, `ssh-copy-id`, `shasum`, `json_pp` and most of perl.
+  Native equivalents: `nvim`, `grep -E`, `sha1sum`, `jq`.
+
+Windows PowerShell 5.1 is *not* in `System32` — it is two directories further
+down, in `System32\WindowsPowerShell\v1.0`, which is left off deliberately:
+`pwsh.exe` 7 comes in via the App Execution Aliases above.
+
+### Why `C:\Windows` and `System32` are symlinks rather than `PATH` entries
+
+DrvFs reports every file on a Windows drive as mode 777, so zsh treats all
+5,122 files in those two directories as executables. On `PATH` they put 3,687
+`.dll` files, 234 more in capitals, 112 `.NLS` tables, 71 `.png` wallpapers and
+a pile of `.cpl`, `.msc` and `.tlb` into the command hash table — `${#commands}`
+went from about 2,000 to **7,127** — and every command-name completion walked
+the lot across a 9p mount.
+
+So the five binaries actually wanted are symlinked into
+[`dot_local/bin/windows/`](./dot_local/bin/windows) and only that directory is
+put on `PATH`: five entries instead of 5,122, and the name of each link is the
+whole inventory. chezmoi manages them as `symlink_` sources, gated on the `wsl`
+flag in [`.chezmoiignore`](./.chezmoiignore) — on a native Linux box they would
+be five dangling links.
+
+Adding one is a file containing its target:
+
+```
+printf '/mnt/c/Windows/System32/ipconfig.exe\n' \
+  > "$(chezmoi source-path)/dot_local/bin/windows/symlink_ipconfig.exe"
+chezmoi apply ~/.local/bin/windows
+```
+
+[`.gitattributes`](./.gitattributes) pins those sources to LF. They hold
+nothing but a path, and `core.autocrlf` on the Windows checkout would otherwise
+leave a `\r` on the end of the link target.
+
+Interop follows symlinks, so these behave exactly as they did on `PATH`,
+pipes included — which is what ruled out the tidier-looking alternative of a
+shell function per binary. A function is invisible to anything that is not this
+zsh: `git`, `nvim`, a script.
+
+### Interop: `.exe` fails with "Exec format error"
+
+Running any Windows binary from a distro can fail with
+
+```
+/mnt/c/Windows/System32/cmd.exe: cannot execute binary file: Exec format error
+```
+
+even while `/proc/sys/fs/binfmt_misc/status` reports `enabled`. WSL registers
+its `:WSLInterop:` handler during its own init; systemd then mounts
+`binfmt_misc` over the top and the registration goes with it. Nothing puts it
+back, because `systemd-binfmt.service` is `ConditionDirectoryNotEmpty` on
+`/etc/binfmt.d` and `/usr/lib/binfmt.d` — both empty on a stock distro, so the
+unit logs *"skipped, no trigger condition checks were met"*.
+
+Check with `ls /proc/sys/fs/binfmt_misc/`: only `register` and `status` means
+the handler is gone. Fix it by giving systemd something to do, as root:
+
+```
+cat > /etc/binfmt.d/WSLInterop.conf <<'EOF'
+:WSLInterop:M::MZ::/init:PF
+EOF
+systemctl restart systemd-binfmt
+```
+
+Fields are name, type `M` (magic), offset, magic `MZ`, mask, interpreter
+`/init`, flags `P` (preserve `argv[0]`) and `F` (open the interpreter at
+registration time, so it still resolves inside mount namespaces).
+
+Worth ruling out first when `open`, `az` or `code` "stop working" — the symptom
+looks like a `PATH` problem and is not one.
+
+`clip.exe` only copies. Pasting has no `.exe` to call — it needs
+`powershell.exe -NoProfile -Command Get-Clipboard`, a whole PowerShell start,
+so it is left unaliased rather than pretending to be `pbpaste`.
+
 ## Arch setup
 
 ```

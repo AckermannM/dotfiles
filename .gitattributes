@@ -1,0 +1,5 @@
+# chezmoi `symlink_` sources hold nothing but the link target. core.autocrlf is
+# true on the Windows checkout, and a CRLF here would put a literal \r on the
+# end of the target path -- a dangling symlink that is near-impossible to read
+# in an `ls`. Pin them to LF. Everything else keeps the default behaviour.
+dot_local/bin/windows/symlink_* text eol=lf
